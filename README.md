@@ -180,5 +180,5 @@ The macOS application was created by [Robin Ebers](https://github.com/robinebers
 This fork adds the Windows edition. Both remain open source under the [MIT License](LICENSE).
 The OpenUsage name and logo are covered by the [trademark policy](TRADEMARK.md).
 
-<sub>Product screenshots use demo accounts. The cover and widget banners are AI-generated conceptual
-illustrations, not application screenshots. [Artwork provenance and prompts](assets/readme/PROVENANCE.md).</sub>
+<sub>All screenshots above show the actual application with demo accounts.
+[Screenshot source and regeneration](docs/images/windows/README.md).</sub>
