@@ -126,7 +126,7 @@ public sealed class AccountStore
     // Weekly readings as the provider reported them, kept only for the current week so daily use can be shown.
     public void RecordWeekly(Account account, UsageSnapshot snapshot, DateTimeOffset now)
     {
-        if (snapshot.Metrics.FirstOrDefault(m => m.Label == "Weekly" && m.ResetsAt.HasValue && m.Percent.HasValue) is not { } weekly) return;
+        if (MetricPresentation.Window(snapshot.Metrics, true, m => m.ResetsAt.HasValue) is not { } weekly) return;
         var start = weekly.ResetsAt!.Value.AddDays(-7);
         var current = State.History.GetValueOrDefault(account.Id)?.Where(s => s.At >= start).ToList() ?? [];
         var last = current.LastOrDefault();

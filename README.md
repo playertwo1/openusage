@@ -82,7 +82,7 @@ is remembered per monitor.
   <img src="docs/images/windows/mini-widget-flyout.png" alt="Actual mini widget flyout listing demo accounts, remaining limits and reset times" width="580">
 </p>
 
-Enable it in **Settings → General**, from the tray menu, or with **Ctrl+Alt+W**.
+Enable it in **Settings → General**, from the tray menu.
 Use **Ctrl+Alt+U** to open or hide the main panel. Closing the panel keeps the tray app running;
 choose **Exit** from the tray menu to quit.
 

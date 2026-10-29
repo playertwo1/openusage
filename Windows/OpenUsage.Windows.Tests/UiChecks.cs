@@ -95,6 +95,8 @@ public static class UiChecks
         Check(Math.Round(behind.Expected) == 54 && Math.Round(behind.Delta) == -51 && !behind.RunsOut && behind.Trend == "-51%", "Pace Behind The Even Line");
         var ahead = WeeklyPace.From(new Metric("Weekly", 55, ResetsAt: now.AddHours(115)), [], now)!;
         Check(Math.Round(ahead.Expected) == 32 && Math.Round(ahead.Delta) == 23 && Math.Round(ahead.Projection) == 174 && ahead.RunsOut && Math.Round(ahead.PerDayLeft) == 9, "Pace Ahead Of The Even Line");
+        var gravity = MetricPresentation.Window([new("Gemini 5h", 10), new("Gemini", 20), new("Claude 5h", 30), new("Claude Weekly", 40)], false);
+        Check(gravity?.Label == "Gemini 5h" && MetricPresentation.Window([new("Gemini 5h", 10), new("Gemini", 20)], true)?.Label == "Gemini", "Antigravity Windows Must Fill The Rings");
         var miniRows = MiniRow.Build(store, statuses);
         Check(miniRows.Select(r => r.Short).SequenceEqual(new[] { "Cx", "C" }), "Mini Widget Labels Must Follow Provider And Account Order");
         Check(new MiniRow(codex, "Cx", new Metric("Session", 90), null, null).Alert == "Danger", "Mini Widget Must Flag Use From 85 Percent");

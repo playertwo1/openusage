@@ -21,7 +21,6 @@ public sealed class MainForm : Form
     private bool refreshing;
     private bool exiting;
     private bool hotkeyRegistered;
-    private bool miniHotkeyRegistered;
     private MiniWidgetForm? mini;
     private readonly bool background;
 
@@ -313,14 +312,12 @@ public sealed class MainForm : Form
     {
         base.OnHandleCreated(e);
         hotkeyRegistered = WindowsIntegration.RegisterHotKey(Handle, 1, 0x4003, (uint)Keys.U);
-        miniHotkeyRegistered = WindowsIntegration.RegisterHotKey(Handle, 2, 0x4003, (uint)Keys.W);
         if (!hotkeyRegistered) statusText = "Shortcut in use · Open from the tray";
         WindowsIntegration.RoundWindow(Handle);
     }
     protected override void WndProc(ref Message m)
     {
         if (m.Msg == 0x0312 && m.WParam == 1) Toggle();
-        if (m.Msg == 0x0312 && m.WParam == 2) ToggleMini();
         base.WndProc(ref m);
         if (m.Msg == 0x0084 && (int)m.Result == 1)
         {
@@ -341,7 +338,6 @@ public sealed class MainForm : Form
         {
             lifetime.Cancel(); timer.Stop(); timer.Dispose(); secondaryTimer.Stop(); secondaryTimer.Dispose();
             if (hotkeyRegistered) WindowsIntegration.UnregisterHotKey(Handle, 1);
-            if (miniHotkeyRegistered) WindowsIntegration.UnregisterHotKey(Handle, 2);
             mini?.Dispose();
             tray.Visible = false; tray.Dispose(); trayMenu.Dispose(); lifetime.Dispose();
         }

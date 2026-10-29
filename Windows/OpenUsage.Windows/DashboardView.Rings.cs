@@ -43,11 +43,9 @@ public sealed partial class DashboardView
         dot.SetResourceReference(S.Shape.StrokeProperty, tone); panel.Children.Add(dot); panel.Children.Add(Text(text, 10, "Muted")); return panel;
     }
 
-    private static Metric? Window(UsageSnapshot? snapshot, string label) => snapshot?.Metrics.FirstOrDefault(m => m.Label == label && m.Text is null && m.Percent is not null);
-
     private W.UIElement ListItem(Account account, AccountStatus? status)
     {
-        var snapshot = status?.Snapshot; var session = Window(snapshot, "Session"); var weekly = Window(snapshot, "Weekly");
+        var snapshot = status?.Snapshot; var session = MetricPresentation.Window(snapshot?.Metrics, false); var weekly = MetricPresentation.Window(snapshot?.Metrics, true);
         var pace = weekly is null ? null : WeeklyPace.From(weekly, store.State.History.GetValueOrDefault(account.Id) ?? [], DateTimeOffset.UtcNow);
         var open = expanded == account.Id;
         var item = new C.StackPanel(); var shown = AccountName(account);
@@ -83,7 +81,7 @@ public sealed partial class DashboardView
             line.Children.Add(Text(pace.Verdict, 11, pace.RunsOut ? "Warning" : "Success"));
             line.Children.Add(Text(" · " + pace.Trend, 11, "Muted"));
         }
-        else if (session is not null) line.Children.Add(Text(Window(snapshot, "Weekly") is null ? "5h window" : "Weekly pace needs a reset time", 11, "Muted"));
+        else if (session is not null) line.Children.Add(Text(MetricPresentation.Window(snapshot?.Metrics, true) is null ? "5h window" : "Weekly pace needs a reset time", 11, "Muted"));
         else if (snapshot?.Metrics.FirstOrDefault(m => !store.IsHidden(account, m)) is { } other) line.Children.Add(Text($"{other.Label} {MetricPresentation.Value(other, display)}", 11, "Muted"));
         else line.Children.Add(Text(status?.RetryAfter > DateTimeOffset.UtcNow ? "Waiting for rate limit" : "Fetching", 11, "Muted"));
         return line;

@@ -152,7 +152,7 @@ public sealed class MiniWidgetForm : Form
         menu.Items.Add(Item("Open OpenUsage", () => OpenRequested?.Invoke()));
         menu.Items.Add(Item("Refresh now", () => RefreshRequested?.Invoke()));
         menu.Items.Add(new System.Windows.Controls.Separator());
-        menu.Items.Add(Item("Hide widget", () => HideRequested?.Invoke(), null, "Ctrl+Alt+W"));
+        menu.Items.Add(Item("Hide widget", () => HideRequested?.Invoke()));
         menu.Opened += (_, _) => flyout.Hide();
         return menu;
     }

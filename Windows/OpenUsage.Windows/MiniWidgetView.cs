@@ -16,8 +16,7 @@ public sealed record MiniRow(Account Account, string Short, Metric? Session, Met
         foreach (var account in store.State.Accounts)
         {
             if (statuses.GetValueOrDefault(account.Id)?.Snapshot is not UsageSnapshot snapshot) continue;
-            Metric? Find(string label) => snapshot.Metrics.FirstOrDefault(m => m.Label == label && m.Text is null && m.Percent is not null && !store.IsHidden(account, m));
-            var session = Find("Session"); var weekly = Find("Weekly");
+            var session = MetricPresentation.Window(snapshot.Metrics, false, m => !store.IsHidden(account, m)); var weekly = MetricPresentation.Window(snapshot.Metrics, true, m => !store.IsHidden(account, m));
             if (session is null && weekly is null) continue;
             var pace = weekly is null ? null : WeeklyPace.From(weekly, store.State.History.GetValueOrDefault(account.Id) ?? [], DateTimeOffset.UtcNow);
             rows.Add(new MiniRow(account, ShortName(account, store.State.Accounts), session, weekly, pace));

@@ -34,7 +34,15 @@ public sealed class DisplayPreferences
 public static class MetricPresentation
 {
     // Fixed identity colour per window; use only changes the number, never the bar or ring.
-    public static string BaseTone(string label) => label switch { "Session" => "S5h", "Weekly" => "Swk", _ => "Accent" };
+    public static string BaseTone(string label) => label switch { "Session" or "Gemini 5h" or "Claude 5h" => "S5h", "Weekly" or "Gemini" or "Claude Weekly" => "Swk", _ => "Accent" };
+    // Antigravity names its windows per model family; the first one present, in this order, stands for the account.
+    private static readonly string[] SessionLabels = ["Session", "Gemini 5h", "Claude 5h"], WeeklyLabels = ["Weekly", "Gemini", "Claude Weekly"];
+    public static bool IsWeekly(Metric metric) => WeeklyLabels.Contains(metric.Label);
+    public static Metric? Window(IEnumerable<Metric>? metrics, bool weekly, Func<Metric, bool>? usable = null)
+    {
+        var list = metrics?.Where(m => m.Text is null && m.Percent is not null && (usable?.Invoke(m) ?? true)).ToList();
+        return (weekly ? WeeklyLabels : SessionLabels).Select(label => list?.FirstOrDefault(m => m.Label == label)).FirstOrDefault(m => m is not null);
+    }
     public static string AccountName(Account account, IReadOnlyList<Account> accounts, bool hide)
     {
         if (!hide) return account.Label;

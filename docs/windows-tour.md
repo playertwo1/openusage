@@ -57,7 +57,7 @@ Settings is a short list in three groups.
   <img src="images/windows/mini-widget-flyout.png" alt="Mini widget flyout with one row per account" width="300">
 </p>
 
-An optional small panel that floats on your desktop. Turn it on from **Settings > General**, the tray menu ("Show Mini Widget") or **Ctrl+Alt+W**.
+An optional small panel that floats on your desktop. Turn it on from **Settings > General**, the tray menu ("Show Mini Widget").
 
 - **The pill:** a short label per account (C1, C2, Cx, AG, Gk) with two thin bars, 5h on top and Week below, and a dot when use passes 85% or the weekly projection passes 100%. A vertical layout is available for screen edges.
 - **Drag it anywhere** by its surface. It snaps to a screen edge when released within 12 px, remembers its place **per monitor**, and moves back into view if your resolution or monitors change.

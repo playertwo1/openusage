@@ -67,7 +67,7 @@ public sealed partial class DashboardView
         row.Height = 34; row.Margin = new W.Thickness(8, 0, 12, 0); row.ContextMenu = MetricMenu(account, snapshot, metric);
         row.Children.Add(Favorite(account, snapshot, metric));
         var label = Text(metric.Label, 12, store.IsHidden(account, metric) ? "Muted" : "Foreground"); label.Margin = new W.Thickness(8, 0, 8, 0); Put(row, label, 1);
-        var pace = metric.Label == "Weekly" ? WeeklyPace.From(metric, store.State.History.GetValueOrDefault(account.Id) ?? [], DateTimeOffset.UtcNow) : null;
+        var pace = MetricPresentation.IsWeekly(metric) ? WeeklyPace.From(metric, store.State.History.GetValueOrDefault(account.Id) ?? [], DateTimeOffset.UtcNow) : null;
         if (metric.Text is null && metric.Unit == "percent" && MetricPresentation.Fill(metric, display) is double fill)
         {
             var bar = new C.Grid { Height = 3, Margin = new W.Thickness(0, 0, 8, 0) };

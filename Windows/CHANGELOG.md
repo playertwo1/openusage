@@ -9,7 +9,7 @@ First release of the Windows edition: a C#/.NET 10 tray app that shows the usage
 - **Used / Remaining** and **All / Favorites** switches, in the saved account order.
 - **Accounts:** accounts grouped by provider, one row per metric with favorite star, bar, value, reset and a Show switch. Rename, remove and reorder accounts, providers and metrics.
 - **Settings:** theme (system, light, dark), text size (100%, 110%, 125%), used or remaining, reset format, favorites only, hide account names, launch at sign-in, low usage alerts.
-- **Mini widget:** an optional floating panel you drag anywhere, with a hover flyout, a right-click menu, a vertical layout and a position remembered per monitor. Toggle it from the tray, Settings or Ctrl+Alt+W.
+- **Mini widget:** an optional floating panel you drag anywhere, with a hover flyout, a right-click menu, a vertical layout and a position remembered per monitor. Toggle it from the tray, Settings.
 - **Tray:** favorites in the tooltip and menu, Ctrl+Alt+U to open the panel, notifications when a limit passes 90%.
 - **Weekly history:** daily use comes from the provider's weekly percentages that the app saw, so days it was closed show a dash. There is no spend or token total, because the providers do not report one.
 
