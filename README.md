@@ -1,262 +1,178 @@
 # OpenUsage
 
-Track your AI coding subscriptions from the macOS menu bar.
+**Your AI subscription limits, in one place.**
 
-OpenUsage also has a **Windows edition**, a separate C#/.NET app with the same account-based approach. See [OpenUsage for Windows](#openusage-for-windows) below for what it does and how it looks.
-
-OpenUsage shows how much of each AI plan you have used: session and weekly limits, credits, and
-balances, in one panel. Star the metrics you watch most and they appear in the menu bar.
-
-You add each account in the app. OpenUsage reads nothing that belongs to other tools: no Keychain
-items, auth files, logs, databases, or environment variables. It shows only the limits and dollar
-values that the provider's own API reports.
-
-<!-- assets/screenshot.jpg needs a new capture of the account-based dashboard before release. -->
-<p align="center">
-  <img src="assets/screenshot.jpg" alt="OpenUsage menu bar panel showing Claude and ChatGPT usage limits" width="900">
-</p>
-
-## OpenUsage for Windows
-
-The Windows edition lives in [`Windows/`](Windows/) and is independent of the Swift app and the macOS release pipeline. It is a tray app written in C# on .NET 10. The screens are WPF, hosted by the Windows Forms window and tray lifecycle. It supports the same ten providers (Claude, ChatGPT/Codex, Cursor, Antigravity, Copilot, Grok, Ollama, OpenCode, OpenRouter and Z.ai) and follows the same rule as the Mac app: you sign in to each account inside the app, and it never reads credentials or files that belong to other tools.
-
-**Download:** the portable `OpenUsage-windows-x64.exe` (69 MB, no installer, runs without installing .NET) is on the [Windows 0.1.0 release](https://github.com/playertwo1/openusage/releases/tag/windows-v0.1.0). To build it yourself, run `./script/windows.ps1 publish` with the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Version history is in [`Windows/CHANGELOG.md`](Windows/CHANGELOG.md) and details are in [docs/windows.md](docs/windows.md). All screenshots below use made-up demo data, not real accounts.
-
-### Overview
+Track usage, remaining limits and reset times across your AI coding accounts. Keep the numbers
+close in the Windows tray or the macOS menu bar, without opening a dashboard for every provider.
 
 <p align="center">
-  <img src="docs/images/windows/overview.png" alt="Windows Overview in the light theme, with an expanded row showing the weekly pace chart" width="320">
-  <img src="docs/images/windows/overview-dark.png" alt="Windows Overview in the dark theme showing remaining values" width="320">
+  <img src="assets/readme/cover.jpg" alt="OpenUsage: Your AI limits. Always in view. Conceptual violet and cyan meter illustration." width="1000">
 </p>
-
-Overview is one grouped list with a row per account, in the order you saved. A column header names the two windows: **5h** (the session limit, purple) and **Week** (the weekly limit, cyan). Those two colors mean the same thing everywhere in the app.
-
-Each row shows:
-
-- **A double ring.** The outer ring is the 5h Session window and the inner ring is Weekly. Providers with only one window get a single ring.
-- **The account name** with the provider icon, a star when you have starred a metric, and a short verdict under it: "Lasts week", "Runs out Sat" or "5h window", plus how far ahead or behind an even pace you are (for example "+22%" or "on pace").
-- **Both windows** with the percentage, the time until reset and a thin bar. The Weekly bar has a small tick where an even pace would be right now.
-- **An alert on the number only.** The number turns red from 85% used, and amber when the weekly projection passes 100%. Bars and rings never change color, so the purple and cyan stay recognizable.
-
-Click a row (or press Enter or Space with it focused) to open its **weekly pace chart**. It plots your cumulative weekly use against the ideal line of 14.3% a day, adds a dashed projection to day 7, and marks where the limit would run out. Next to it are the verdict, "Up to X%/day left" and "Projected N%", and a "Daily" line with the use of each day since the reset. Only one row is open at a time. Right-click a row for rename, remove and move actions.
-
-The pace is computed from the provider's own percentage and reset time over a 168-hour window: `expected = elapsed / 168h`, `projection = used / elapsed * 168h`, and the day the limit runs out is when use would reach 100% at the current rate. The daily numbers come from the weekly percentages OpenUsage has actually seen, so a day when the app was closed shows a dash. **There is no spend, token or price estimate anywhere**, because the providers do not report those and OpenUsage does not infer them.
-
-The switches above the list choose **Used** or **Remaining** (the values, rings, bars and pace tick all flip) and **All** or **Favorites**.
-
-### Accounts
 
 <p align="center">
-  <img src="docs/images/windows/accounts.png" alt="Windows Accounts screen with one list per account and a row per metric" width="320">
+  <a href="https://github.com/playertwo1/openusage/releases/download/windows-v0.1.0/OpenUsage-windows-x64.exe"><strong>Download for Windows</strong></a>
+  &nbsp; · &nbsp;
+  <a href="https://github.com/robinebers/openusage/releases/latest"><strong>Download for macOS</strong></a>
+  &nbsp; · &nbsp;
+  <a href="docs/README.md">Documentation</a>
 </p>
 
-Accounts are grouped by provider, with the provider menu in the group header. Each account is its own list: a header with the name, a plan badge (Pro, Max, Plus and so on) and an account menu, then **one row per metric** with the favorite star, the name, a bar, the value, the reset time and a **Show** switch. "Limit Resets" is a plain row without a bar. Each account ends with its "Updated" time. Here you rename and remove accounts, reorder accounts and providers, star up to two metrics per account for the tray, and hide metrics. Every metric starts shown, and the starred defaults match the Mac app.
+This fork adds a native Windows edition to [Robin Ebers' OpenUsage](https://github.com/robinebers/openusage).
+The two editions have separate builds and releases; their platform-specific features are listed below.
 
-### Settings
+## Get Started
 
-<p align="center">
-  <img src="docs/images/windows/settings.png" alt="Windows Settings screen with Appearance, Usage Display and General groups" width="320">
-</p>
+| | Windows | macOS |
+|---|---|---|
+| **Download** | [Portable x64 executable](https://github.com/playertwo1/openusage/releases/download/windows-v0.1.0/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
+| **Requirements** | Windows 10 or 11 | macOS 15 Sequoia or later; Apple Silicon or Intel |
+| **Install** | Download and run. No installer or separate .NET installation needed. | Open the DMG and drag OpenUsage to Applications. |
+| **Updates** | Download a newer Windows release manually. | Signed, notarized in-app Sparkle updates. |
+| **More** | [Windows guide](docs/windows.md) · [Release notes](Windows/CHANGELOG.md) | [macOS documentation](docs/README.md) · [Release notes](CHANGELOG.md) |
 
-Settings is a short list in three groups.
-
-- **Appearance:** theme (System, Light or Dark) and text size (100%, 110% or 125%).
-- **Usage Display:** show usage as used or remaining, reset times as a countdown or a date and time, favorites only, and hide account names. Hiding names applies to Overview, the tray, the tray tooltip and notifications. Accounts still shows them so you can manage them.
-- **General:** launch at sign-in, low usage alerts (a notification when a limit passes 90%), the global shortcut Ctrl+Alt+U, and the mini widget options below.
-
-### Mini widget
-
-<p align="center">
-  <img src="docs/images/windows/mini-widget.png" alt="Horizontal mini widget" height="64">
-  &nbsp;
-  <img src="docs/images/windows/mini-widget-vertical.png" alt="Vertical mini widget" height="120">
-  &nbsp;
-  <img src="docs/images/windows/mini-widget-flyout.png" alt="Mini widget flyout with one row per account" width="300">
-</p>
-
-An optional small panel that floats on your desktop. Turn it on from **Settings > General**, the tray menu ("Show Mini Widget") or **Ctrl+Alt+W**.
-
-- **The pill:** a short label per account (C1, C2, Cx, AG, Gk) with two thin bars, 5h on top and Week below, and a dot when use passes 85% or the weekly projection passes 100%. A vertical layout is available for screen edges.
-- **Drag it anywhere** by its surface. It snaps to a screen edge when released within 12 px, remembers its place **per monitor**, and moves back into view if your resolution or monitors change.
-- **Hover (or click)** to open a flyout with every account's windows, reset times and verdict. It opens on whichever side has room and closes when the mouse leaves.
-- **Right-click** for Always on top, Lock position, Vertical layout, Open OpenUsage, Refresh now and Hide widget.
-- It has no border, stays out of the taskbar and Alt+Tab, and never takes keyboard focus.
-
-### Adding an account
-
-<p align="center">
-  <img src="docs/images/windows/add-account.png" alt="Add account screen with the provider selector" width="320">
-  <img src="docs/images/windows/empty.png" alt="First-run empty state" width="320">
-</p>
-
-**Add Account** opens a provider picker. Claude, ChatGPT, Cursor, Antigravity, Copilot and Grok sign in through your browser or a device code. Ollama, OpenCode, OpenRouter and Z.ai use API keys, and OpenRouter's balance needs a Management key. You can add several accounts per provider. Sign-in tokens are renewed automatically when due, and a failed early renewal keeps a still-valid token and shows an account-specific warning.
-
-### How your data is kept
-
-- Accounts and tokens are saved in `%LOCALAPPDATA%\OpenUsage.Windows\accounts.dat`, encrypted with Windows DPAPI for your user account. Tokens and provider responses are never logged.
-- The file also stores your display choices, favorites, hidden metrics and the weekly percentages used for the daily history. Older files without these load with defaults, and your accounts and ordering are preserved.
-- If you run the app through a packaged (Microsoft Store) host such as the Codex app, Windows may redirect that folder to a private location. Launch `OpenUsage.exe` directly so it always uses the same file.
-
-### What changed from the first Windows build
-
-The first Windows build worked but looked plain. This edition keeps its sign-ins, ten provider clients and encrypted storage, and changes everything you see:
-
-- A WPF interface modeled on the Mac app, replacing the plain Windows Forms controls, with original provider logos and a compact window you move by its header and resize by its edges.
-- Overview, Accounts and Settings rebuilt as described above, with light, dark and system themes and larger text sizes.
-- The double rings, pace marker and weekly pace chart, which need no extra data from providers.
-- A purple accent and fixed purple and cyan colors for the two windows, replacing the earlier blue.
-- The optional floating mini widget, its flyout, menu and per-monitor position.
-- A name privacy option, favorites, per-metric visibility and reordering that now also cover the tray and notifications.
-- The portable executable shrank from 173 MB to 69 MB.
-- Regression checks for storage, compatibility with older account files, token renewal, usage mapping and the rendered screens, run by `./script/windows.ps1 test`.
-
-Known limits: the window is opaque (no Acrylic or Mica), the shortcuts are fixed, and there is no installer or automatic update.
-
-## Installation
-
-**Homebrew:**
+macOS users can also install with Homebrew:
 
 ```sh
 brew install --cask openusage
 ```
 
-**Direct download:** download the latest universal DMG from the
-[releases page](https://github.com/robinebers/openusage/releases/latest), open it, and drag OpenUsage
-to your Applications folder.
+Open the app, choose **Add Account** on Windows or **Accounts → +** on macOS, and sign in to a provider.
+You can add multiple accounts for the same provider.
 
-Either way, the app updates itself in place through signed, notarized
-[Sparkle](docs/updates.md) updates. Requires macOS 15 (Sequoia) or later.
+## OpenUsage for Windows
 
-## Accounts
+A compact WPF desktop app with a tray icon, light and dark themes, and a view of both your session
+and weekly limits. Violet identifies the **5h session** window; cyan identifies the **weekly** window.
 
-Open **Accounts** from the panel's **Options** menu (or press Return), click **+**, and click a
-provider to start its sign-in. Browser sign-in opens your browser; **Open Browser** opens it again and
-**Copy Link** lets you pick another browser. Device-code sign-in shows the code to enter. API-key
-sign-in links to the page where you create the key. You can add several accounts for the same provider. See
-[Accounts](docs/accounts.md) for renaming and removing accounts.
+<p align="center">
+  <a href="docs/images/windows/overview.png"><img src="docs/images/windows/overview.png" alt="Actual Windows light-theme Overview showing demo accounts, session and weekly limits, and the expanded weekly pace chart" width="310"></a>
+  &nbsp;
+  <a href="docs/images/windows/overview-dark.png"><img src="docs/images/windows/overview-dark.png" alt="Actual Windows dark-theme Overview showing remaining limits for demo accounts" width="310"></a>
+</p>
 
-Account names and settings live in the app's own preferences. OAuth tokens and API keys live in the
-app's own Keychain service.
+### Know What Is Left
 
-## Providers
+- **One view for your accounts.** Session and weekly values, reset times and provider identities stay together in your saved order.
+- **Used or remaining.** Switch the values, rings and bars with one control. Filter to your favorites when you want less to scan.
+- **Weekly pace.** Expand an account to compare observed usage with an even pace, see a projection and check the daily history the app has recorded.
+- **Your preferred view.** Choose a system, light or dark theme, larger text, exact reset dates or countdowns, and account-name privacy.
+- **Useful alerts.** Optional notifications when a limit crosses 90% used, plus favorites in the tray menu.
 
-Claude, ChatGPT, Cursor, Antigravity, Copilot, Grok, Ollama, OpenCode, OpenRouter, and Z.ai. Claude,
-ChatGPT, Cursor, Antigravity, Copilot, and Grok sign in with OAuth. Ollama, OpenCode, OpenRouter, and
-Z.ai use API keys. OpenRouter's balance needs a Management key. [Providers](docs/providers.md) lists
-what each one shows and what each sign-in grants.
+Pace projections use the provider's weekly percentage and reset time. Daily history reflects readings
+the app actually observed; missing days stay missing. These are usage projections, not dollar or
+token estimates. [See the Windows product tour](docs/windows-tour.md) for the full behavior.
 
-## Features
+### Stay in Flow
 
-- **Menu bar stars.** Star up to two metrics per provider. When more than one account of a provider is
-  starred, each mark carries the account name's initials.
-- **Dashboard.** A header and a card per provider. The header shows the provider's logo and name, and
-  inside the card every account, even when it is the only one, has a caption with its name and plan
-  above its rows. One row per metric: label, bar, value, and reset. With a reset window the bar's colour is where your pace lands at the
-  reset: blue on course, orange inside the last 10%, red with a flame before the value when you would
-  run out first; without one, blue, orange once 75% is used, red once 90% is. Click a value to flip
-  every row between used and left, a reset between countdown and exact time. Rest the pointer on a bar
-  to read where your pace lands at the reset, on a value to read its other side, on a reset to read
-  the other format, and on the warning or clock after an account's name to read why it is there.
-  Right-click a header, a card, an account, or a row for its actions. Drag to reorder.
-- **Resets.** Claude and ChatGPT accounts show a Limit Resets row with the number of available rate-limit
-  resets. Rest the pointer on the count to see when each expires, and spend one from there.
-- **Share.** Rest the pointer on a provider's header and click the copy button at its right, or
-  right-click the provider and choose Share Screenshot, to copy a PNG of its header and card, with
-  every account, to the clipboard; from an account's right-click, that account alone. The picture uses
-  the account's name when you have set one and leaves an email out.
-- **Notifications.** Optional alerts when a limit falls under 10% or your pace changes.
-- **Global shortcut.** Toggle the panel from anywhere.
-- **[Command line](docs/cli.md).** Install the `openusage` command from Settings; it prints the usage
-  the app last fetched as JSON, for scripts and agents.
-- **[Automatic updates](docs/updates.md).** Signed, notarized in-app updates, with an optional beta
-  channel.
+<p align="center">
+  <img src="assets/readme/mini-widget.jpg" alt="Conceptual illustration for the optional desktop mini widget: Less switching. More focus." width="1000">
+</p>
 
-## Documentation
+The optional **mini widget** keeps a small view of your accounts on the desktop. Drag it to a screen
+edge, choose horizontal or vertical layout, and hover or click for the account flyout. Its position
+is remembered per monitor.
 
-Behaviour docs live in [docs/](docs/README.md): the [dashboard](docs/dashboard.md),
-[accounts](docs/accounts.md), the [menu bar](docs/menu-bar.md), [settings](docs/settings.md),
-the [command line](docs/cli.md), [refreshing](docs/refreshing.md), [providers](docs/providers.md),
-[updates](docs/updates.md), and [privacy](docs/privacy.md).
+<p align="center">
+  <img src="docs/images/windows/mini-widget.png" alt="Actual horizontal mini widget with demo account labels and session and weekly bars" height="58">
+  &nbsp;&nbsp;
+  <img src="docs/images/windows/mini-widget-vertical.png" alt="Actual vertical mini widget with demo account labels" height="112">
+</p>
 
-For working on the code, see [architecture](docs/architecture.md),
-[adding a provider](docs/adding-a-provider.md), and [debugging](docs/debugging.md).
+<p align="center">
+  <img src="docs/images/windows/mini-widget-flyout.png" alt="Actual mini widget flyout listing demo accounts, remaining limits and reset times" width="580">
+</p>
 
-## Requirements
+Enable it in **Settings → General**, from the tray menu, or with **Ctrl+Alt+W**.
+Use **Ctrl+Alt+U** to open or hide the main panel. Closing the panel keeps the tray app running;
+choose **Exit** from the tray menu to quit.
 
-- macOS 15 (Sequoia) or later
-- Universal binary, for Apple Silicon and Intel Macs
+<details>
+<summary><strong>Accounts, Settings and Sign-In</strong></summary>
 
-## Building
+<p align="center">
+  <img src="docs/images/windows/accounts.png" alt="Windows Accounts screen with demo accounts, favorite stars and metric visibility controls" width="300">
+  &nbsp;
+  <img src="docs/images/windows/settings.png" alt="Windows Settings screen with appearance and usage display preferences" width="300">
+</p>
 
-```sh
-swift build                 # debug build
-script/test_quiet.sh        # run the test suite without it taking the keyboard or the screen
-./script/build_and_run.sh   # build and launch the dev app from dist/ (no install)
+**Accounts** lets you rename, remove and reorder accounts and providers, star up to two metrics per
+account, and choose which metrics appear. Every metric starts shown; initial favorites match the
+Mac edition. Hiding account names also applies to the tray and notifications, while Accounts keeps
+them visible for management.
+
+<p align="center">
+  <img src="docs/images/windows/add-account.png" alt="Windows Add Account screen with a provider selector and optional account name" width="300">
+</p>
+
+Sign-in happens through your browser, a device code, or an API key, depending on the provider.
+Tokens renew automatically when due. Provider-specific failures appear with the affected account.
+
+</details>
+
+**Current Windows limits:** no installer, automatic updater, Acrylic/Mica material, screenshot
+sharing, macOS CLI export, or action to spend a limit reset. Shortcuts are fixed.
+[Windows documentation](docs/windows.md) covers storage, refresh behavior and troubleshooting.
+
+## Supported Providers
+
+| Sign-In | Providers |
+|---|---|
+| **Browser or device code** | Claude · ChatGPT / Codex · Cursor · Antigravity · GitHub Copilot · Grok |
+| **API key** | Ollama · OpenCode · OpenRouter · Z.ai |
+
+OpenRouter's balance requires a **Management key**. Available metrics depend on what the provider
+reports for your plan. [Provider details](docs/providers.md).
+
+## Your Accounts, Your Credentials
+
+You add every account explicitly inside OpenUsage. The app does not discover accounts or read
+credentials, auth files, logs, databases or environment variables belonging to other tools.
+
+| Platform | Credential Storage |
+|---|---|
+| **Windows** | Windows DPAPI encryption for your user account; stored with app preferences in `%LOCALAPPDATA%\OpenUsage.Windows\accounts.dat`. |
+| **macOS** | The app's own Keychain service; account metadata lives in its preferences. |
+
+Provider API requests are required to fetch usage. Tokens and provider response bodies are never
+logged. The Windows implementation sends no telemetry; macOS telemetry is described in the
+[privacy documentation](docs/privacy.md).
+
+## Build from Source
+
+### Windows
+
+Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), then run PowerShell from the repository:
+
+```powershell
+./script/windows.ps1 run       # Build and launch
+./script/windows.ps1 test      # Storage, OAuth, mapping and UI regression checks
+./script/windows.ps1 publish   # Create a self-contained portable executable
 ```
 
-`script/test_quiet.sh` takes `swift test` arguments such as `--filter`.
+The executable is written to `dist/windows/win-x64/OpenUsage.exe`.
+The [Windows CI workflow](.github/workflows/windows.yml) builds, tests and uploads an x64 artifact.
 
-The dev app is staged as `dist/OpenUsage.app` with the bundle identifier
-`com.robinebers.openusage.dev`, so it runs beside an installed OpenUsage and never checks for updates.
+### macOS
 
-## Architecture
+```sh
+swift build
+script/test_quiet.sh
+./script/build_and_run.sh
+```
 
-SwiftPM package, SwiftUI content hosted in an AppKit-owned `NSStatusItem` and a key-capable
-`NSPanel`, Swift 6 strict concurrency. `AccountStore` persists accounts, `CredentialVault` stores
-their credentials, `ProviderLogin` signs in, and one `AccountProviderRuntime` per account fetches
-usage and maps it to metric lines. See the [architecture overview](docs/architecture.md) and
-[AGENTS.md](AGENTS.md) for conventions.
+Use `script/test_quiet.sh` on a Mac someone is using: UI tests host real windows. The development
+bundle uses `com.robinebers.openusage.dev`, separate from the installed app.
 
-## Releasing
+## Documentation and Contributing
 
-Releases are automated: pushing a `v*` tag on `main` builds, signs, notarizes, and publishes a new
-version. A plain tag (`v0.8.0`) ships to everyone; a pre-release suffix (`v0.8.0-beta.1`) ships to
-the beta channel. The pipeline lives in
-[.github/workflows/release.yml](.github/workflows/release.yml), and the step-by-step is in the
-`release-swift` skill.
+- [Windows guide](docs/windows.md) · [Visual product tour](docs/windows-tour.md) · [Windows changelog](Windows/CHANGELOG.md)
+- [macOS behavior guides](docs/README.md) · [Architecture](docs/architecture.md) · [Adding a provider](docs/adding-a-provider.md)
+- [macOS release setup](docs/macos-release-setup.md) · [Engineering conventions](AGENTS.md)
+- [Contributing](CONTRIBUTING.md) · [Security reporting](SECURITY.md)
 
-### Release setup (one-time)
+The macOS application was created by [Robin Ebers](https://github.com/robinebers/openusage).
+This fork adds the Windows edition. Both remain open source under the [MIT License](LICENSE).
+The OpenUsage name and logo are covered by the [trademark policy](TRADEMARK.md).
 
-The release workflow needs these repository secrets (Settings → Secrets and variables → Actions):
-
-| Secret                       | What it is                                                            |
-| ---------------------------- | --------------------------------------------------------------------- |
-| `APPLE_CERTIFICATE`          | base64 of your Developer ID Application `.p12`                        |
-| `APPLE_CERTIFICATE_PASSWORD` | the password set when exporting that `.p12`                           |
-| `APPLE_ID`                   | the Apple ID email used for notarization                              |
-| `APPLE_PASSWORD`             | an app-specific password for that Apple ID                            |
-| `APPLE_TEAM_ID`              | your Apple Developer team ID                                          |
-| `SPARKLE_PUBLIC_KEY`         | base64 EdDSA public key, baked into the build as `SUPublicEDKey`      |
-| `SPARKLE_PRIVATE_KEY`        | base64 EdDSA private key used to sign the DMG                         |
-| `POSTHOG_CLI_API_KEY`        | PostHog personal API key used to upload dSYMs for crash symbolication |
-| `POSTHOG_CLI_PROJECT_ID`     | numeric PostHog project ID the dSYMs upload to                        |
-
-Export the Developer ID Application cert (with its private key) from Keychain Access as a `.p12`,
-then `base64 -i DeveloperID.p12 | pbcopy`. App-specific passwords come from appleid.apple.com →
-Sign-In and Security → App-Specific Passwords. Generate the Sparkle EdDSA key pair once with Sparkle's
-`generate_keys` tool; the public and private values must be a matching pair or signing is silently
-skipped.
-
-The two `POSTHOG_CLI_*` secrets only upload debug symbols (dSYMs) so PostHog can symbolicate crash
-reports. `POSTHOG_CLI_API_KEY` is a PostHog personal API key (PostHog → Settings → Personal API keys)
-and `POSTHOG_CLI_PROJECT_ID` is the numeric ID from your project URL. The upload host is hardcoded in
-the workflow (`https://us.i.posthog.com`). These two do not block a release: if `POSTHOG_CLI_API_KEY`
-is unset the workflow skips the upload with a warning, and crash reports for that version show raw
-addresses instead of symbolicated stack traces.
-
-The repository must be public (Sparkle fetches the DMG and appcast anonymously), and the appcast is
-served from GitHub Pages. Confirm Settings → Pages points at the `gh-pages` branch after the first
-release.
-
-## Contributing
-
-Issues are welcome. Pull requests are **strict and issue-first**: comment on an issue, wait for a
-maintainer to add the `approved` label and assign it to you, then reference it in your PR with
-`Fixes #123`. Automation closes external PRs without an approved issue assigned to their author, and
-warns when an accepted PR adds more than 1,000 lines. Read [CONTRIBUTING.md](CONTRIBUTING.md) before
-opening one. Report security issues privately per [SECURITY.md](SECURITY.md). The OpenUsage name and
-logo are covered by the [trademark policy](TRADEMARK.md).
-
-## License
-
-[MIT](LICENSE)
+<sub>Product screenshots use demo accounts. The cover and widget banners are AI-generated conceptual
+illustrations, not application screenshots. [Artwork provenance and prompts](assets/readme/PROVENANCE.md).</sub>
