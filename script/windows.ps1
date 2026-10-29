@@ -23,7 +23,7 @@ switch ($Action) {
     'run' { & $dotnetPath run --project $appProject --configuration Release --no-launch-profile }
     'publish' {
         $outputDirectory = Join-Path $projectRoot "dist\windows\$Runtime"
-        & $dotnetPath publish $appProject --configuration Release --runtime $Runtime --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None --output $outputDirectory --nologo
+        & $dotnetPath publish $appProject --configuration Release --runtime $Runtime --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:EnableCompressionInSingleFile=true -p:SatelliteResourceLanguages=en --output $outputDirectory --nologo
         if ($LASTEXITCODE -eq 0) { Write-Output "OpenUsage: $outputDirectory\OpenUsage.exe" }
     }
 }
