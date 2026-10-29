@@ -3,7 +3,7 @@
 The Windows development edition is a separate C#/.NET application in `Windows/`, with WPF views
 hosted by the Windows Forms tray/window lifecycle.
 The Swift app and macOS release pipeline remain independent. This is a local development build,
-not a published Windows release.
+published separately as the `windows-v*` releases, such as 0.1.0.
 
 ## Build And Run
 
