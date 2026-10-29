@@ -1,0 +1,330 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-29T00:00:00Z",
+  "title": "Design System: OpenUsage for Windows",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Signal Purple",
+        "canonical": "#9B30D0",
+        "tonalRamp": [
+          "#2E0A40",
+          "#5A1B7D",
+          "#9B30D0",
+          "#B65CE0",
+          "#CC8BEA",
+          "#E0B5F3",
+          "#F0D8F9",
+          "#F3E8FB"
+        ]
+      },
+      "accent-dark": {
+        "role": "primary",
+        "displayName": "Signal Purple (dark)",
+        "canonical": "#BF5AF2",
+        "tonalRamp": [
+          "#1B0A26",
+          "#3A2A4D",
+          "#7A2FA8",
+          "#A046D6",
+          "#BF5AF2",
+          "#D28BF6",
+          "#E5B9FA",
+          "#F3DDFD"
+        ]
+      },
+      "swk": {
+        "role": "secondary",
+        "displayName": "Week Cyan",
+        "canonical": "#0A8FC2",
+        "tonalRamp": [
+          "#032B3B",
+          "#065A7B",
+          "#0A8FC2",
+          "#38A9D4",
+          "#6FC3E3",
+          "#A8DBEE",
+          "#D3EDF7",
+          "#EBF7FB"
+        ]
+      },
+      "swk-dark": {
+        "role": "secondary",
+        "displayName": "Week Cyan (dark)",
+        "canonical": "#64D2FF",
+        "tonalRamp": [
+          "#0B2A36",
+          "#16526A",
+          "#2E8DB3",
+          "#4DB4E0",
+          "#64D2FF",
+          "#93E0FF",
+          "#BFEBFF",
+          "#E3F6FF"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Card Surface",
+        "canonical": "#F2F2F5",
+        "tonalRamp": [
+          "#202127",
+          "#64656D",
+          "#A3A4AB",
+          "#DDE0E5",
+          "#E0E1E6",
+          "#F2F2F5",
+          "#FCFCFD",
+          "#FFFFFF"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Card Surface (dark)",
+        "canonical": "#24262C",
+        "tonalRamp": [
+          "#18191D",
+          "#24262C",
+          "#30333A",
+          "#393C46",
+          "#42454E",
+          "#A9ABB5",
+          "#F4F4F6",
+          "#FFFFFF"
+        ]
+      },
+      "warning": {
+        "role": "secondary",
+        "displayName": "Amber Caution",
+        "canonical": "#A96500",
+        "tonalRamp": [
+          "#3D2400",
+          "#6E4100",
+          "#A96500",
+          "#D18314",
+          "#F0B45D",
+          "#F6CE91",
+          "#FAE3BD",
+          "#FDF3E1"
+        ]
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "Signal Red",
+        "canonical": "#C73A33",
+        "tonalRamp": [
+          "#4A1210",
+          "#7F211D",
+          "#C73A33",
+          "#E0645E",
+          "#FF8E86",
+          "#FFB4AE",
+          "#FFD3CF",
+          "#FFEDEB"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "heading": {
+        "displayName": "Heading",
+        "purpose": "Empty-state title at 18px."
+      },
+      "title": {
+        "displayName": "Provider Title",
+        "purpose": "Short \"Settings\" page title at 15px."
+      },
+      "row-name": {
+        "displayName": "Row Name",
+        "purpose": "Account name in the Overview row."
+      },
+      "row-number": {
+        "displayName": "Row Number",
+        "purpose": "Used or left percent in the 5h and Week cells; carries the alert colour."
+      },
+      "metric-label": {
+        "displayName": "Metric Label",
+        "purpose": "Metric name on Accounts metric lines (12px)."
+      },
+      "reset": {
+        "displayName": "Reset",
+        "purpose": "Reset text on legacy cards."
+      },
+      "mini-label": {
+        "displayName": "Mini Label",
+        "purpose": "Short account label above the bars in the Mini Widget (9px)."
+      }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [
+      {
+        "name": "panel-min",
+        "value": "400px"
+      },
+      {
+        "name": "panel-default",
+        "value": "440px"
+      },
+      {
+        "name": "panel-max",
+        "value": "500px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Single accent action such as Add Account in the empty state.",
+      "html": "<button class=\"ds-btn-primary\">Add Account</button>",
+      "css": ".ds-btn-primary { background: #9B30D0; color: #fff; font: 600 13px 'Segoe UI Variable','Segoe UI',sans-serif; padding: 7px 11px; min-height: 32px; border: 0; border-radius: 8px; cursor: pointer; } .ds-btn-primary:hover { opacity: .88; } .ds-btn-primary:active { opacity: .72; } .ds-btn-primary:focus-visible { outline: 2px solid #9B30D0; outline-offset: 3px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Default secondary action; transparent until hovered.",
+      "html": "<button class=\"ds-btn-quiet\">Open Data Folder</button>",
+      "css": ".ds-btn-quiet { background: transparent; color: #202127; font: 400 13px 'Segoe UI Variable','Segoe UI',sans-serif; padding: 7px 11px; min-height: 32px; border: 1px solid transparent; border-radius: 8px; cursor: pointer; } .ds-btn-quiet:hover { background: #F2F2F5; } .ds-btn-quiet:active { background: #E0E1E6; } .ds-btn-quiet:focus-visible { outline: 2px solid #9B30D0; outline-offset: 3px; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segment-group",
+      "description": "Overview, Accounts and Settings switch; same pattern for Used and Remaining.",
+      "html": "<div class=\"ds-seg\"><button class=\"ds-seg-item ds-selected\">Overview</button><button class=\"ds-seg-item\">Accounts</button><button class=\"ds-seg-item\">Settings</button></div>",
+      "css": ".ds-seg { display: flex; background: #F2F2F5; border-radius: 9px; padding: 3px; width: 408px; } .ds-seg-item { flex: 1; background: transparent; color: #202127; font: 400 13px 'Segoe UI Variable','Segoe UI',sans-serif; padding: 6px 12px; min-height: 30px; border: 0; border-radius: 8px; cursor: pointer; } .ds-seg-item:hover { background: #E0E1E6; } .ds-seg-item.ds-selected { background: #fff; font-weight: 600; } .ds-seg-item:focus-visible { outline: 2px solid #9B30D0; outline-offset: 3px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Raised field with hairline border; border turns purple on focus.",
+      "html": "<input class=\"ds-input\" value=\"Work\" />",
+      "css": ".ds-input { background: #fff; color: #202127; font: 400 13px 'Segoe UI Variable','Segoe UI',sans-serif; padding: 9px 10px; border: 1px solid #E0E1E6; border-radius: 8px; width: 280px; caret-color: #9B30D0; outline: none; } .ds-input:focus { border-color: #9B30D0; }"
+    },
+    {
+      "name": "Overview Row",
+      "kind": "card",
+      "refersTo": "list-row",
+      "description": "48px row in the grouped Overview list: double mini ring, account with pace verdict, 5h and Week numbers over 3px bars, the Week bar carrying a pace tick. The number is red at 85 percent used or more.",
+      "html": "<div class=\"ds-list\"><div class=\"ds-orow\"><span class=\"ds-ring\"></span><div class=\"ds-who\"><div class=\"ds-name\">Personal</div><div class=\"ds-sub\">Lasts week &middot; on pace</div></div><div class=\"ds-cell\"><b>23%</b><i class=\"ds-bar\"><u class=\"ds-f5\"></u></i></div><div class=\"ds-cell\"><b class=\"ds-hot\">88%</b><i class=\"ds-bar\"><u class=\"ds-fw\"></u><s class=\"ds-tick\"></s></i></div></div></div>",
+      "css": ".ds-list { background: #F2F2F5; border-radius: 10px; width: 416px; font-family: 'Segoe UI Variable','Segoe UI',sans-serif; color: #202127; } .ds-orow { display: grid; grid-template-columns: 28px 1fr 72px 84px; height: 48px; padding: 0 12px; align-items: center; column-gap: 8px; } .ds-ring { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #9B30D0; box-shadow: none; } .ds-name { font-size: 13px; font-weight: 600; } .ds-sub { font-size: 11px; color: #22824B; } .ds-cell b { font-size: 14px; font-weight: 600; } .ds-cell b.ds-hot { color: #C73A33; } .ds-bar { display: block; position: relative; height: 3px; border-radius: 2px; background: #DDE0E5; margin-top: 4px; } .ds-bar u { display: block; height: 100%; border-radius: 2px; } .ds-f5 { width: 23%; background: #9B30D0; } .ds-fw { width: 88%; background: #0A8FC2; } .ds-tick { position: absolute; left: 40%; top: -2px; width: 2px; height: 7px; border-radius: 1px; background: #202127; }"
+    },
+    {
+      "name": "Account List",
+      "kind": "card",
+      "refersTo": "account-list",
+      "description": "Accounts: per-account inset list with a 40px head (name, plan badge on Accent Wash, menu), 34px metric lines (star, name, 3px bar, value, reset, Show switch) and a 26px Updated footer.",
+      "html": "<div class=\"ds-al\"><div class=\"ds-head\"><b>Personal</b><span class=\"ds-badge\">Pro</span></div><div class=\"ds-ml\"><span>&#9733;</span><span>Session</span><i class=\"ds-bar\"><u></u></i><b>77%</b><span class=\"ds-sw ds-on\"></span></div><div class=\"ds-foot\">Updated 07:47</div></div>",
+      "css": ".ds-al { background: #F2F2F5; border-radius: 10px; width: 416px; font-family: 'Segoe UI Variable','Segoe UI',sans-serif; color: #202127; } .ds-head { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 12px; font-size: 13px; } .ds-badge { background: #F3E8FB; color: #9B30D0; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; } .ds-ml { display: grid; grid-template-columns: 22px 1fr 64px 40px 28px; align-items: center; height: 34px; padding: 0 12px 0 8px; border-top: 1px solid #E0E1E6; font-size: 12px; column-gap: 8px; } .ds-ml b { text-align: right; } .ds-bar { display: block; height: 3px; border-radius: 2px; background: #DDE0E5; } .ds-bar u { display: block; width: 77%; height: 100%; border-radius: 2px; background: #9B30D0; } .ds-sw { width: 28px; height: 16px; border-radius: 8px; background: #DDE0E5; } .ds-sw.ds-on { background: #9B30D0; } .ds-foot { height: 26px; line-height: 26px; padding: 0 12px; border-top: 1px solid #E0E1E6; font-size: 10px; color: #64656D; }"
+    },
+    {
+      "name": "Switch",
+      "kind": "custom",
+      "refersTo": "switch",
+      "description": "28 by 16 pill with a 12px thumb; Accent when on, Track when off.",
+      "html": "<span class=\"ds-switch ds-on\"><span class=\"ds-thumb\"></span></span>",
+      "css": ".ds-switch { display: inline-block; width: 28px; height: 16px; border-radius: 8px; background: #DDE0E5; position: relative; } .ds-switch.ds-on { background: #9B30D0; } .ds-thumb { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; } .ds-switch.ds-on .ds-thumb { left: auto; right: 2px; }"
+    },
+    {
+      "name": "Choice",
+      "kind": "input",
+      "refersTo": "choice",
+      "description": "22px popup field with stacked up and down chevrons; used for Text Size, Show Usage As and Reset Times.",
+      "html": "<div class=\"ds-choice\">100%<span>&#8597;</span></div>",
+      "css": ".ds-choice { display: inline-flex; justify-content: space-between; gap: 22px; align-items: center; min-width: 76px; height: 22px; padding: 0 7px 0 9px; box-sizing: border-box; background: #fff; border: 1px solid #E0E1E6; border-radius: 6px; font-size: 12px; font-family: 'Segoe UI Variable','Segoe UI',sans-serif; color: #202127; } .ds-choice span { color: #64656D; }"
+    },
+    {
+      "name": "Theme Segments",
+      "kind": "nav",
+      "refersTo": "segment-theme",
+      "description": "Settings Theme control: System, Light, Dark on a Track frame, selected Raised.",
+      "html": "<div class=\"ds-ts\"><button>System</button><button class=\"ds-selected\">Light</button><button>Dark</button></div>",
+      "css": ".ds-ts { display: inline-flex; background: #DDE0E5; border-radius: 7px; padding: 2px; } .ds-ts button { background: transparent; border: 0; border-radius: 6px; padding: 3px 10px; min-height: 24px; font-size: 11px; font-family: 'Segoe UI Variable','Segoe UI',sans-serif; color: #202127; } .ds-ts .ds-selected { background: #fff; font-weight: 600; }"
+    },
+    {
+      "name": "Keycaps",
+      "kind": "custom",
+      "refersTo": "keycap",
+      "description": "Display-only Global Shortcut: Ctrl, Alt, U.",
+      "html": "<span class=\"ds-key\">Ctrl</span><span class=\"ds-key\">Alt</span><span class=\"ds-key\">U</span>",
+      "css": ".ds-key { display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 4px; border-bottom: 1px solid #E0E1E6; background: #DDE0E5; color: #202127; font-size: 11px; font-weight: 500; font-family: 'Segoe UI Variable','Segoe UI',sans-serif; }"
+    },
+    {
+      "name": "Mini Widget",
+      "kind": "card",
+      "refersTo": "mini-pill",
+      "description": "Floating dark pill: per account a 9px label over two 28 by 4px bars (5h purple, Week cyan) and a 6px alert dot; horizontal or vertical. Opaque, no shadow.",
+      "html": "<div class=\"ds-mini\"><span class=\"ds-ml\">Cx</span><i class=\"ds-mb\"><u class=\"ds-m5\"></u></i><i class=\"ds-mb\"><u class=\"ds-mw\"></u></i><b class=\"ds-md\"></b></div>",
+      "css": ".ds-mini { position: relative; display: inline-block; width: 28px; background: #1C1C1E; border: 1px solid #393C46; border-radius: 14px; padding: 7px 14px 7px 10px; box-sizing: content-box; font-family: 'Segoe UI Variable','Segoe UI',sans-serif; } .ds-ml { display: block; text-align: center; font-size: 9px; font-weight: 600; color: #A9ABB5; } .ds-mb { display: block; height: 4px; margin-top: 3px; border-radius: 2px; background: #42454E; } .ds-mb u { display: block; height: 100%; border-radius: 2px; } .ds-m5 { width: 77%; background: #BF5AF2; } .ds-mw { width: 36%; background: #64D2FF; } .ds-md { position: absolute; top: 4px; right: 10px; width: 6px; height: 6px; border-radius: 50%; background: #FFD60A; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Gauge",
+    "overview": "A 440-logical-pixel tray panel that reads like a household meter: one grouped list, one 48px row per account, two thin bars per row. It adapts the macOS edition using native WPF controls and Segoe UI Variable. The old utility-style Windows interface is the anti-reference.\n\nDensity is calm. The Overview row carries a mini double ring, the account, a pace verdict and two numbers with bars (5h and Week); expanding it reveals the weekly pace chart. The window is opaque in light and dark, with Windows 11 rounded corners and no blur or transparency. Everything shown is provider-reported; there is no spend overview.",
+    "keyCharacteristics": [
+      "Tonal layering, no shadows: depth comes from Background, Surface and Raised steps.",
+      "One purple accent, also the 5h window colour; Week uses a cyan data tone, not a second accent.",
+      "Alerts live in the number only; bars never change colour with severity.",
+      "Provider marks and the app mark are original SVG assets; interface icons are drawn strokes.",
+      "Light, dark and system themes share one token set; text scales 100, 110 or 125 percent as a single transform."
+    ],
+    "rules": [
+      {
+        "name": "The Number Alerts Rule",
+        "body": "Severity is carried by the number alone: red from 85 percent used, amber when the weekly projection passes 100 percent. Bars and rings keep their window colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Accent Rule",
+        "body": "There is a single accent hue (purple). Cyan marks the Week window only and never labels providers, categories or actions.",
+        "section": "colors"
+      },
+      {
+        "name": "The High Contrast Rule",
+        "body": "When Windows high contrast is on, every role collapses to system window, text and highlight brushes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sentence Weight Rule",
+        "body": "Only SemiBold and Medium appear. Hardcoded titles use title case.",
+        "section": "typography"
+      },
+      {
+        "name": "The Scale Once Rule",
+        "body": "Text size 110 or 125 percent is one layout scale on the shell or dialog root; never also resize individual fonts.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tonal Depth Rule",
+        "body": "Separate surfaces by background step and 1px Hairline, never by drop shadow or transparency.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do pull colors from the token roles and let the theme swap light and dark values.",
+      "Do put alerts in the number: red from 85 percent used, amber when the projection passes 100.",
+      "Do keep bars 3px with window colours (5h purple, Week cyan) regardless of severity.",
+      "Do name every interactive control for assistive technology and keep the focus ring visible.",
+      "Do use Windows-native input: keyboard focus, Escape closes dialogs, real controls.",
+      "Do show only provider-supplied values, and keep provider and account order as saved.",
+      "Do keep both themes, compact layouts, empty and error states, long account names and 125 percent text free of overlap at 400 to 500 px."
+    ],
+    "donts": [
+      "Don't add a spend chart, spend overview, cost estimate or token tally; the product shows reported limits, balances, resets and weekly pace of reported percent only.",
+      "Don't add tooltips (hoverTooltip or WPF ToolTip).",
+      "Don't use drop shadows, gradient fills, blur or window transparency.",
+      "Don't introduce a second accent hue; cyan is reserved for the Week window.",
+      "Don't colour bars or rings by severity.",
+      "Don't revert to the old utility-style Windows interface.",
+      "Don't use hardcoded hex values in views; reference resource keys.",
+      "Don't show Density or Layout controls in Settings; they had no effect and were removed.",
+      "Don't make the keycaps look editable or add a shortcut recorder without wiring it.",
+      "Don't add shadows, translucency, Acrylic or tooltips to the Mini Widget or its flyout.",
+      "Don't put real account labels in shared review captures."
+    ]
+  }
+}

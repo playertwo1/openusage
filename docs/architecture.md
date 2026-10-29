@@ -1,5 +1,8 @@
 # Architecture
 
+This page describes the Swift/macOS edition. The separate C# Windows application, its build commands
+and platform behavior are documented in [Windows](windows.md).
+
 OpenUsage is a SwiftPM package with three targets: `OpenUsage` (the library, where everything lives),
 `OpenUsageApp` (a thin executable), and `OpenUsageCLI` (the `openusage` command, shipped at
 `Contents/Helpers/openusage`). Swift 6 with strict concurrency; SwiftUI content hosted in an

@@ -1,0 +1,37 @@
+name: Windows
+
+on:
+  push:
+    branches: [main]
+    paths: ['Windows/**', 'script/windows.ps1', '.github/workflows/windows.yml']
+  pull_request:
+    branches: [main]
+    paths: ['Windows/**', 'script/windows.ps1', '.github/workflows/windows.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build
+        shell: pwsh
+        run: ./script/windows.ps1 build
+      - name: Regression Checks
+        shell: pwsh
+        run: ./script/windows.ps1 test
+      - name: Build Portable Application
+        shell: pwsh
+        run: ./script/windows.ps1 publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenUsage-Windows-x64
+          path: dist/windows/win-x64/OpenUsage.exe

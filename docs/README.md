@@ -1,5 +1,7 @@
 # OpenUsage documentation
 
+For the Windows development edition, see [Windows](windows.md). The other pages describe macOS.
+
 What the app does and how it behaves. These pages describe behaviour, not visuals, and change together
 with the behaviour they describe. If the app and a page here disagree, that is a bug.
 

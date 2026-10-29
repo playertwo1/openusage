@@ -29,3 +29,7 @@ node_modules/
 # Local appcast / Sparkle feed output
 feed/
 appcast.xml
+
+# Windows/.NET build artifacts
+**/bin/
+**/obj/

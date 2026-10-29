@@ -2,6 +2,12 @@
 
 Track your AI coding subscriptions from the macOS menu bar.
 
+A Windows development edition is also available in this repository. Build and run it with
+`./script/windows.ps1 run`, or create a portable executable with `./script/windows.ps1 publish`.
+See [Windows](docs/windows.md) for requirements, account setup and current differences from macOS.
+Its compact dashboard supports light/dark themes, cards or list, used/remaining values and saved
+visualization preferences.
+
 OpenUsage shows how much of each AI plan you have used: session and weekly limits, credits, and
 balances, in one panel. Star the metrics you watch most and they appear in the menu bar.
 
