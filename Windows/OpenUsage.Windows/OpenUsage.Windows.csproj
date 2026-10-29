@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>OpenUsage</AssemblyName>
+    <Version>0.1.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="../../Sources/OpenUsage/Resources/ProviderIcons/*.svg" LogicalName="ProviderIcons.%(Filename).svg" />
