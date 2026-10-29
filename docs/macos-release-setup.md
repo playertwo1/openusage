@@ -39,5 +39,3 @@ addresses instead of symbolicated stack traces.
 The repository must be public (Sparkle fetches the DMG and appcast anonymously), and the appcast is
 served from GitHub Pages. Confirm Settings → Pages points at the `gh-pages` branch after the first
 release.
-
-

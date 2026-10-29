@@ -94,5 +94,3 @@ The first Windows build worked but looked plain. This edition keeps its sign-ins
 - Regression checks for storage, compatibility with older account files, token renewal, usage mapping and the rendered screens, run by `./script/windows.ps1 test`.
 
 Known limits: the window is opaque (no Acrylic or Mica), the shortcuts are fixed, and there is no installer or automatic update.
-
-
