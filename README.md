@@ -1,89 +1,95 @@
+<div align="center">
+
 # OpenUsage
 
-**Your AI subscription limits, in one place.**
+### Your AI limits. One quiet place.
 
-Track usage, remaining limits and reset times across your AI coding accounts. Keep the numbers
-close in the Windows tray or the macOS menu bar, without opening a dashboard for every provider.
+Session limits, weekly usage and reset times — in your tray, on your desktop, or one hover away.
+
+[Windows](#openusage-for-windows) · [macOS](#get-started) · [Documentation](docs/README.md) · [MIT License](LICENSE)
+
+</div>
 
 <p align="center">
-  <img src="assets/readme/cover.jpg" alt="OpenUsage: Your AI limits. Always in view. Conceptual violet and cyan meter illustration." width="1000">
+  <a href="docs/images/windows/overview-dark.png"><img src="docs/images/windows/overview-dark.png" alt="Current Windows app: AMOLED dashboard with demo accounts and an expanded weekly pace chart" width="330"></a>
+  &nbsp;&nbsp;
+  <a href="docs/images/windows/mini-widget-chart.png"><img src="docs/images/windows/mini-widget-chart.png" alt="Current hover panel: click a demo account to expand its weekly usage chart" width="370"></a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/playertwo1/openusage/releases/download/windows-v0.1.1/OpenUsage-windows-x64.exe"><strong>Download for Windows</strong></a>
-  &nbsp; · &nbsp;
-  <a href="https://github.com/robinebers/openusage/releases/latest"><strong>Download for macOS</strong></a>
-  &nbsp; · &nbsp;
-  <a href="docs/README.md">Documentation</a>
-</p>
+<p align="center"><sub>Real renders of the current Windows interface. All accounts and usage values shown are demonstration data.</sub></p>
 
 This fork adds a native Windows edition to [Robin Ebers' OpenUsage](https://github.com/robinebers/openusage).
-The two editions have separate builds and releases; their platform-specific features are listed below.
+Windows and macOS have separate builds and releases.
+
+> **New Windows interface:** the screenshots and features below reflect the current `main` branch.
+> The published **v0.1.1 executable is an earlier build**. To use the new interface now,
+> [build from source](#windows) or download the artifact from a successful [Windows CI run](https://github.com/playertwo1/openusage/actions/workflows/windows.yml).
 
 ## Get Started
 
 | | Windows | macOS |
 |---|---|---|
-| **Download** | [Portable x64 executable](https://github.com/playertwo1/openusage/releases/download/windows-v0.1.1/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
+| **Download** | [Portable x64 · v0.1.1](https://github.com/playertwo1/openusage/releases/download/windows-v0.1.1/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
 | **Requirements** | Windows 10 or 11 | macOS 15 Sequoia or later; Apple Silicon or Intel |
 | **Install** | Download and run. No installer or separate .NET installation needed. | Open the DMG and drag OpenUsage to Applications. |
 | **Updates** | Download a newer Windows release manually. | Signed, notarized in-app Sparkle updates. |
-| **More** | [Windows guide](docs/windows.md) · [Release notes](Windows/CHANGELOG.md) | [macOS documentation](docs/README.md) · [Release notes](CHANGELOG.md) |
+| **Guide** | [Windows documentation](docs/windows.md) | [macOS documentation](docs/README.md) |
 
-macOS users can also install with Homebrew:
+On macOS, you can also install with Homebrew:
 
 ```sh
 brew install --cask openusage
 ```
 
-Open the app, choose **Add Account** on Windows or **Accounts → +** on macOS, and sign in to a provider.
-You can add multiple accounts for the same provider.
+Choose **Add Account** on Windows or **Accounts → +** on macOS to sign in.
+Multiple accounts from the same provider are supported.
 
 ## OpenUsage for Windows
 
-A compact WPF desktop app with a tray icon, light and dark themes, and a view of both your session
-and weekly limits. Violet identifies the **5h session** window; cyan identifies the **weekly** window.
+A compact native desktop app with three ways to stay informed:
+
+| View | When to use it |
+|---|---|
+| **Main panel** | Read account limits and reset times, switch between used and remaining, and expand weekly charts. |
+| **Mini widget** | Keep just provider names, two bars and percentages on the desktop. Purple is 5h; green is weekly. |
+| **Corner ball** | Keep the desktop clear. Hover for the account panel; click an account to open its chart in place. |
+
+### A Clearer View of Your Accounts
+
+- **Room for every account.** Names sit above the metrics, in your saved order.
+- **Height that follows the content.** The panel grows and shrinks with visible accounts and expanded charts. Scrolling is needed only when content exceeds the monitor's work area.
+- **Weekly pace at a click.** Compare observed usage with an even pace and see the projection for the current week.
+- **Used or remaining.** Change the value convention and filter to starred metrics.
+- **Your preferred display.** Choose light, AMOLED dark or system appearance, text size, reset format and account-label privacy. Optional soft transparency can be disabled for a solid background.
 
 <p align="center">
-  <a href="docs/images/windows/overview.png"><img src="docs/images/windows/overview.png" alt="Actual Windows light-theme Overview showing demo accounts, session and weekly limits, and the expanded weekly pace chart" width="310"></a>
-  &nbsp;
-  <a href="docs/images/windows/overview-dark.png"><img src="docs/images/windows/overview-dark.png" alt="Actual Windows dark-theme Overview showing remaining limits for demo accounts" width="310"></a>
+  <a href="docs/images/windows/overview.png"><img src="docs/images/windows/overview.png" alt="Current light-theme main panel with separate account headings and session and weekly limits" width="330"></a>
 </p>
 
-### Know What Is Left
+Pace projections use provider-reported percentages and reset times. Missing observations stay missing.
+They are usage projections, not dollar or token estimates.
 
-- **One view for your accounts.** Session and weekly values, reset times and provider identities stay together in your saved order.
-- **Used or remaining.** Switch the values, rings and bars with one control. Filter to your favorites when you want less to scan.
-- **Weekly pace.** Expand an account to compare observed usage with an even pace, see a projection and check the daily history the app has recorded.
-- **Your preferred view.** Choose a system, light or dark theme, larger text, exact reset dates or countdowns, and account-name privacy.
-- **Useful alerts.** Optional notifications when a limit crosses 90% used, plus favorites in the tray menu.
+### From a Ball to a Weekly Chart
 
-Pace projections use the provider's weekly percentage and reset time. Daily history reflects readings
-the app actually observed; missing days stay missing. These are usage projections, not dollar or
-token estimates. [See the Windows product tour](docs/windows-tour.md) for the full behavior.
-
-### Stay in Flow
+**Hover → choose an account → see its chart.** The panel stays open while your pointer is over it.
+Click the same account again to close its chart, or another account to switch.
 
 <p align="center">
-  <img src="assets/readme/mini-widget.jpg" alt="Conceptual illustration for the optional desktop mini widget: Less switching. More focus." width="1000">
-</p>
-
-The optional **mini widget** keeps a small view of your accounts on the desktop. Drag it to a screen
-edge, choose horizontal or vertical layout, and hover or click for the account flyout. Its position
-is remembered per monitor.
-
-<p align="center">
-  <img src="docs/images/windows/mini-widget.png" alt="Actual horizontal mini widget with demo account labels and session and weekly bars" height="58">
-  &nbsp;&nbsp;
-  <img src="docs/images/windows/mini-widget-vertical.png" alt="Actual vertical mini widget with demo account labels" height="112">
+  <img src="docs/images/windows/mini-widget-ball.png" alt="Collapsed OpenUsage ball" width="40">
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/images/windows/mini-widget.png" alt="Compact mini widget: provider labels with purple session and green weekly bars and percentages" width="360">
 </p>
 
 <p align="center">
-  <img src="docs/images/windows/mini-widget-flyout.png" alt="Actual mini widget flyout listing demo accounts, remaining limits and reset times" width="580">
+  <a href="docs/images/windows/mini-widget-flyout.png"><img src="docs/images/windows/mini-widget-flyout.png" alt="Hover panel showing demo accounts, both usage windows and weekly pace verdicts" width="570"></a>
 </p>
 
-Enable it in **Settings → General**, from the tray menu.
-Use **Ctrl+Alt+U** to open or hide the main panel. Closing the panel keeps the tray app running;
+- **Click the ball** to expand the compact mini. Use **−** to collapse it again.
+- **Drag either view** near the top, bottom, sides or corners to snap it into place. Position and collapsed state are saved.
+- **Right-click** for always-on-top, lock position, orientation and other widget actions.
+- **Enable the widget** in **Settings → General** or from the tray menu.
+
+Use **Ctrl+Alt+U** to open or hide the main panel. Closing it keeps OpenUsage in the tray;
 choose **Exit** from the tray menu to quit.
 
 <details>

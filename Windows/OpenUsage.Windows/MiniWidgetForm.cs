@@ -14,6 +14,7 @@ public sealed class MiniWidgetForm : Form
     private IReadOnlyList<MiniRow> rows = [];
     private DateTimeOffset? updated;
     private string status = "Refreshes every five minutes";
+    private DateTime suppressHoverUntil;
     public event Action? OpenRequested;
     public event Action? RefreshRequested;
     public event Action? HideRequested;
@@ -23,12 +24,14 @@ public sealed class MiniWidgetForm : Form
     {
         this.store = store;
         FormBorderStyle = FormBorderStyle.None; ShowInTaskbar = false; StartPosition = FormStartPosition.Manual; AutoScaleMode = AutoScaleMode.Dpi;
-        BackColor = Color.FromArgb(0x1C, 0x1C, 0x1E);
+        BackColor = Color.FromArgb(0, 0, 0);
         Controls.Add(new ElementHost { Dock = DockStyle.Fill, Child = view, BackColor = BackColor });
         flyout = new FlyoutForm(store);
         flyout.OpenRequested += () => { flyout.Hide(); OpenRequested?.Invoke(); };
+        flyout.ContentChanged += () => { if (flyout.Visible) PositionFlyout(); };
         view.PressStarted += BeginDrag;
-        view.HoverStarted += () => { if (!flyout.Visible) { hover.Stop(); hover.Start(); } };
+        view.CollapseRequested += ToggleCollapsed;
+        view.HoverStarted += () => { if (!flyout.Visible && DateTime.UtcNow >= suppressHoverUntil) { hover.Stop(); hover.Start(); } };
         hover.Tick += (_, _) => { hover.Stop(); if (Bounds.Contains(Cursor.Position)) ShowFlyout(); };
         leave.Tick += (_, _) => { if (flyout.Visible && !Bounds.Contains(Cursor.Position) && !flyout.Bounds.Contains(Cursor.Position)) flyout.Hide(); };
         leave.Start();
@@ -42,6 +45,7 @@ public sealed class MiniWidgetForm : Form
     public void Render(IReadOnlyDictionary<Guid, AccountStatus> statuses, string statusText)
     {
         var display = store.State.Display;
+        Opacity = display.SoftTransparency && !System.Windows.SystemParameters.HighContrast ? .90 : 1;
         rows = MiniRow.Build(store, statuses);
         updated = statuses.Values.Select(s => s.FetchedAt).Where(t => t.HasValue).DefaultIfEmpty(null).Max();
         status = statusText;
@@ -58,7 +62,7 @@ public sealed class MiniWidgetForm : Form
         var scale = DeviceDpi / 96d; var size = view.DesiredSize;
         var wasVisible = Visible;
         ClientSize = new Size((int)Math.Ceiling(size.Width * scale), (int)Math.Ceiling(size.Height * scale));
-        using var path = RoundedPath(new Rectangle(0, 0, Width, Height), (int)(14 * scale));
+        using var path = RoundedPath(new Rectangle(0, 0, Width, Height), (int)((store.State.Display.MiniCollapsed ? 16 : 14) * scale));
         Region = new Region(path);
         Place(wasVisible || store.State.Display.MiniWidget);
     }
@@ -91,20 +95,50 @@ public sealed class MiniWidgetForm : Form
     private void BeginDrag()
     {
         flyout.Hide();
-        if (store.State.Display.MiniLocked) { ShowFlyout(); return; }
+        if (store.State.Display.MiniLocked) { ClickWidget(); return; }
         var before = Location;
         WindowsIntegration.ReleaseCapture(); WindowsIntegration.SendMessage(Handle, 0x00A1, 2, 0);
-        if (Location == before) { ShowFlyout(); return; }
+        if (Location == before) { ClickWidget(); return; }
         Snap(); SavePosition();
     }
 
-    // Within 12px of a work-area edge the widget settles 8px from it.
+    private void ClickWidget() { if (store.State.Display.MiniCollapsed) ToggleCollapsed(); else ShowFlyout(); }
+    private void ToggleCollapsed()
+    {
+        hover.Stop(); flyout.Hide();
+        suppressHoverUntil = DateTime.UtcNow.AddSeconds(1);
+        PreferenceChanged?.Invoke(d => d.MiniCollapsed = !d.MiniCollapsed);
+    }
+
+    // Apply magnetism during native dragging, not just after the mouse is released.
+    protected override void WndProc(ref Message m)
+    {
+        base.WndProc(ref m);
+        if (m.Msg != 0x0216 || m.LParam == IntPtr.Zero) return; // WM_MOVING
+        var edges = new int[4];
+        System.Runtime.InteropServices.Marshal.Copy(m.LParam, edges, 0, 4);
+        var bounds = Rectangle.FromLTRB(edges[0], edges[1], edges[2], edges[3]);
+        var snapped = SnapBounds(bounds, Screen.FromRectangle(bounds).WorkingArea, DeviceDpi / 96d);
+        System.Runtime.InteropServices.Marshal.Copy(new[] { snapped.Left, snapped.Top, snapped.Right, snapped.Bottom }, 0, m.LParam, 4);
+        m.Result = (IntPtr)1;
+    }
+
+    public static Rectangle SnapBounds(Rectangle bounds, Rectangle area, double scale)
+    {
+        var reach = (int)Math.Round(32 * scale);
+        var gap = (int)Math.Round(6 * scale);
+        var x = bounds.Left; var y = bounds.Top;
+        if (Math.Abs(x - area.Left) <= reach) x = area.Left + gap;
+        else if (Math.Abs(area.Right - bounds.Right) <= reach) x = area.Right - bounds.Width - gap;
+        if (Math.Abs(y - area.Top) <= reach) y = area.Top + gap;
+        else if (Math.Abs(area.Bottom - bounds.Bottom) <= reach) y = area.Bottom - bounds.Height - gap;
+        return new Rectangle(Math.Clamp(x, area.Left, Math.Max(area.Left, area.Right - bounds.Width)),
+            Math.Clamp(y, area.Top, Math.Max(area.Top, area.Bottom - bounds.Height)), bounds.Width, bounds.Height);
+    }
+
     private void Snap()
     {
-        var area = Screen.FromRectangle(Bounds).WorkingArea; var x = Left; var y = Top;
-        if (Math.Abs(x - area.Left) <= 12) x = area.Left + 8; else if (Math.Abs(area.Right - Right) <= 12) x = area.Right - Width - 8;
-        if (Math.Abs(y - area.Top) <= 12) y = area.Top + 8; else if (Math.Abs(area.Bottom - Bottom) <= 12) y = area.Bottom - Height - 8;
-        Location = new Point(Math.Clamp(x, area.Left, Math.Max(area.Left, area.Right - Width)), Math.Clamp(y, area.Top, Math.Max(area.Top, area.Bottom - Height)));
+        Bounds = SnapBounds(Bounds, Screen.FromRectangle(Bounds).WorkingArea, DeviceDpi / 96d);
     }
 
     private void SavePosition()
@@ -119,6 +153,12 @@ public sealed class MiniWidgetForm : Form
     public void ShowFlyout()
     {
         flyout.Render(rows, updated, status);
+        PositionFlyout();
+        flyout.Show();
+    }
+
+    private void PositionFlyout()
+    {
         var area = Screen.FromRectangle(Bounds).WorkingArea; var size = flyout.Size;
         int x, y;
         if (store.State.Display.MiniVertical)
@@ -131,7 +171,6 @@ public sealed class MiniWidgetForm : Form
         }
         flyout.Location = new Point(Math.Clamp(x, area.Left, Math.Max(area.Left, area.Right - size.Width)), Math.Clamp(y, area.Top, Math.Max(area.Top, area.Bottom - size.Height)));
         flyout.TopMost = TopMost;
-        flyout.Show();
     }
 
     private System.Windows.Controls.ContextMenu BuildMenu()
@@ -146,6 +185,7 @@ public sealed class MiniWidgetForm : Form
             item.Click += (_, _) => action(); return item;
         }
         menu.Items.Add(Item("Always on top", () => PreferenceChanged?.Invoke(d => d.MiniOnTop = !display.MiniOnTop), display.MiniOnTop));
+        menu.Items.Add(Item(display.MiniCollapsed ? "Expand widget" : "Collapse to ball", ToggleCollapsed));
         menu.Items.Add(Item("Lock position", () => PreferenceChanged?.Invoke(d => d.MiniLocked = !display.MiniLocked), display.MiniLocked));
         menu.Items.Add(Item("Vertical layout", () => PreferenceChanged?.Invoke(d => d.MiniVertical = !display.MiniVertical), display.MiniVertical));
         menu.Items.Add(new System.Windows.Controls.Separator());
@@ -169,6 +209,7 @@ public sealed class MiniWidgetForm : Form
         private readonly AccountStore store;
         private readonly MiniFlyoutView content = new();
         public event Action? OpenRequested;
+        public event Action? ContentChanged;
         public FlyoutForm(AccountStore store)
         {
             this.store = store;
@@ -176,12 +217,18 @@ public sealed class MiniWidgetForm : Form
             BackColor = Color.FromArgb(0x20, 0x20, 0x20);
             Controls.Add(new ElementHost { Dock = DockStyle.Fill, Child = content, BackColor = BackColor });
             content.OpenRequested += () => OpenRequested?.Invoke();
+            content.ContentChanged += () => { FitContent(); ContentChanged?.Invoke(); };
         }
         protected override bool ShowWithoutActivation => true;
         protected override CreateParams CreateParams { get { var p = base.CreateParams; p.ExStyle |= 0x08000000 | 0x00000080; return p; } }
         public void Render(IReadOnlyList<MiniRow> rows, DateTimeOffset? updated, string status)
         {
             content.Render(store, rows, updated, status);
+            FitContent();
+        }
+        private void FitContent()
+        {
+            content.MaxHeight = (Screen.FromPoint(Cursor.Position).WorkingArea.Height - 16) / (DeviceDpi / 96d);
             content.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
             var scale = DeviceDpi / 96d; ClientSize = new Size((int)Math.Ceiling(content.DesiredSize.Width * scale), (int)Math.Ceiling(content.DesiredSize.Height * scale));
             using var path = RoundedPath(new Rectangle(0, 0, Width, Height), (int)(8 * scale)); Region = new Region(path);

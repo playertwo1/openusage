@@ -33,11 +33,12 @@ public sealed class MainForm : Form
         FormBorderStyle = FormBorderStyle.None;
         Padding = new Padding(3);
         ClientSize = new Size(440, 700);
-        MinimumSize = new Size(400, 420);
+        MinimumSize = new Size(400, 180);
         StartPosition = FormStartPosition.CenterScreen;
         Icon = WindowsIntegration.CreateAppIcon();
         shell = new ShellView(store, WindowsIntegration.LaunchAtLogin);
         Controls.Add(new System.Windows.Forms.Integration.ElementHost { Dock = DockStyle.Fill, Child = shell, BackColor = Color.White });
+        shell.ContentChanged += FitContent;
         shell.AddRequested += AddAccount;
         shell.RefreshRequested += () => _ = RefreshAsync(force: true);
         shell.HideRequested += Hide;
@@ -75,13 +76,27 @@ public sealed class MainForm : Form
 
     private void ApplyAppearance(bool resize = false)
     {
+        Opacity = store.State.Display.SoftTransparency && !System.Windows.SystemParameters.HighContrast ? .96 : 1;
         var brush = (System.Windows.Media.SolidColorBrush)PresentationTheme.Brush(shell, "Background");
         BackColor = Color.FromArgb(brush.Color.R, brush.Color.G, brush.Color.B);
         if (Controls.Count > 0) Controls[0].BackColor = BackColor;
-        var scale = store.State.Display.TextSize / 100d;
+        var scale = store.State.Display.TextSize / 100d * DeviceDpi / 96d;
         var minimum = (int)(400 * scale);
-        MinimumSize = new Size(minimum, 420);
+        MinimumSize = new Size(minimum, 180);
         if (resize || Width < minimum) Width = (int)(440 * scale);
+    }
+
+    internal static int ContentHeight(double logicalHeight, double dpiScale, int available)
+        => Math.Clamp((int)Math.Ceiling(logicalHeight * dpiScale) + 6, Math.Min(180, available), available);
+
+    private void FitContent()
+    {
+        if (IsDisposed) return;
+        var area = Screen.FromRectangle(Bounds).WorkingArea;
+        var scale = DeviceDpi / 96d;
+        var height = ContentHeight(shell.MeasureContentHeight(Math.Max(1, ClientSize.Width - Padding.Horizontal) / scale), scale, area.Height - 16);
+        if (Height != height) Height = height;
+        Location = new Point(Math.Clamp(Left, area.Left, Math.Max(area.Left, area.Right - Width)), Math.Clamp(Top, area.Top + 8, Math.Max(area.Top + 8, area.Bottom - Height - 8)));
     }
 
     private void AddAccount()
@@ -306,6 +321,7 @@ public sealed class MainForm : Form
         Show(); WindowState = FormWindowState.Normal;
         var area = Screen.FromPoint(Cursor.Position).WorkingArea;
         Location = new Point(Math.Max(area.Left, area.Right - Width - 12), Math.Max(area.Top, area.Bottom - Height - 12));
+        FitContent();
         Activate();
     }
     protected override void OnHandleCreated(EventArgs e)

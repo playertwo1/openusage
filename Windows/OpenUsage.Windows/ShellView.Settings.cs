@@ -16,6 +16,8 @@ public sealed partial class ShellView
         heading.Margin = new Thickness(0, 0, 0, 12); page.Children.Add(heading);
 
         var appearance = Group(page, "Appearance");
+        Row(appearance, "Soft Transparency", "A subtle see-through window; turn off for solid black", Toggle("Soft Transparency", store.State.Display.SoftTransparency,
+            value => EditDisplay(display => display.SoftTransparency = value)));
         Row(appearance, "Theme", "Follow Windows or choose your own", ThemeChoice());
         Row(appearance, "Text Size", "Keep the numbers easy to read", Choice("Text Size", new[] { 100, 110, 125 }, store.State.Display.TextSize,
             value => EditDisplay(display => display.TextSize = value), value => $"{value}%"));

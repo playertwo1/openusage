@@ -29,18 +29,18 @@ public static partial class PresentationTheme
         var resources = (ResourceDictionary)XamlReader.Parse(Styles);
         var colors = dark ? new Dictionary<string, string>
         {
-            ["Background"] = "#18191D", ["Surface"] = "#24262C", ["Raised"] = "#30333A",
-            ["Foreground"] = "#F4F4F6", ["Muted"] = "#A9ABB5", ["Border"] = "#393C46",
-            ["Accent"] = "#BF5AF2", ["OnAccent"] = "#1B0A26", ["AccentSoft"] = "#3A2A4D", ["Warning"] = "#FFD60A",
-            ["Danger"] = "#FF453A", ["Success"] = "#30D158", ["Track"] = "#42454E",
-            ["S5h"] = "#BF5AF2", ["Swk"] = "#64D2FF"
+            ["Background"] = "#000000", ["Surface"] = "#000000", ["Raised"] = "#141414",
+            ["Foreground"] = "#F4F4F6", ["Muted"] = "#A9ABB5", ["Border"] = "#242424",
+            ["Accent"] = "#9A78FF", ["OnAccent"] = "#1B0A26", ["AccentSoft"] = "#3A2A4D", ["Warning"] = "#FF985A",
+            ["Danger"] = "#FF453A", ["Success"] = "#30D158", ["Track"] = "#242424",
+            ["S5h"] = "#9A78FF", ["Swk"] = "#36D98B"
         } : new Dictionary<string, string>
         {
             ["Background"] = "#FCFCFD", ["Surface"] = "#F2F2F5", ["Raised"] = "#FFFFFF",
             ["Foreground"] = "#202127", ["Muted"] = "#64656D", ["Border"] = "#E0E1E6",
             ["Accent"] = "#9B30D0", ["OnAccent"] = "#FFFFFF", ["AccentSoft"] = "#F3E8FB", ["Warning"] = "#A96500",
             ["Danger"] = "#C73A33", ["Success"] = "#22824B", ["Track"] = "#DDE0E5",
-            ["S5h"] = "#9B30D0", ["Swk"] = "#0A8FC2"
+            ["S5h"] = "#9B30D0", ["Swk"] = "#087F48"
         };
         foreach (var (key, value) in colors)
         {

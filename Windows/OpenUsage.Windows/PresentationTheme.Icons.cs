@@ -49,7 +49,13 @@ public static partial class PresentationTheme
     public static FrameworkElement ProviderIcon(ProviderKind kind, double size = 22)
         => SvgIcon(kind switch { ProviderKind.Codex => "codex", ProviderKind.OpenCode => "opencode", ProviderKind.OpenRouter => "openrouter", _ => kind.ToString().ToLowerInvariant() }, size);
 
-    public static FrameworkElement AppIcon(double size = 22) => SvgIcon("openusage", size);
+    public static FrameworkElement AppIcon(double size = 22)
+    {
+        var path = new Path { Data = Geometry.Parse("M5,4 L5,13 A7,7 0 0 0 19,13 L19,4"), StrokeThickness = 3.4,
+            StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
+        BindForeground(path, Path.StrokeProperty);
+        return new Viewbox { Width = size, Height = size, Child = new Canvas { Width = 24, Height = 24, Children = { path } }, IsHitTestVisible = false };
+    }
 
     private static FrameworkElement SvgIcon(string name, double size)
     {

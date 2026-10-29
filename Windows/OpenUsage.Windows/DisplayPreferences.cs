@@ -10,6 +10,7 @@ public enum ResetDisplay { Countdown, Exact }
 
 public sealed class DisplayPreferences
 {
+    public bool SoftTransparency { get; set; } = true;
     public ColorTheme Theme { get; set; } = ColorTheme.System;
     public ViewDensity Density { get; set; } = ViewDensity.Comfortable;
     public DashboardLayout Layout { get; set; } = DashboardLayout.Cards;
@@ -19,6 +20,7 @@ public sealed class DisplayPreferences
     public bool HideAccountNames { get; set; }
     public int TextSize { get; set; } = 100;
     public bool MiniWidget { get; set; }
+    public bool MiniCollapsed { get; set; } = true;
     public bool MiniVertical { get; set; }
     public bool MiniOnTop { get; set; } = true;
     public bool MiniLocked { get; set; }

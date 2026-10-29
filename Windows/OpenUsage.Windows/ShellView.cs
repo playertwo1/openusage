@@ -13,6 +13,7 @@ public sealed partial class ShellView : WpfUserControl
 {
     public DashboardView Dashboard { get; } = new();
     public DashboardView Accounts { get; } = new(manage: true);
+    public event Action? ContentChanged;
     public event Action? AddRequested;
     public event Action? RefreshRequested;
     public event Action? DisplayChanged;
@@ -36,6 +37,19 @@ public sealed partial class ShellView : WpfUserControl
     private string currentPage = "Overview";
     private string? appearance;
 
+    public double MeasureContentHeight(double width)
+    {
+        var scale = store.State.Display.TextSize / 100d;
+        width /= scale;
+        double content;
+        if (currentPage == "Settings" && pageHost.Content is ScrollViewer { Content: FrameworkElement settings })
+        {
+            settings.Measure(new System.Windows.Size(width, double.PositiveInfinity)); content = settings.DesiredSize.Height;
+        }
+        else content = (currentPage == "Accounts" ? Accounts : Dashboard).MeasureContentHeight(width) + (currentPage == "Overview" ? 46 : 0);
+        return (content + 100) * scale;
+    }
+
     public ShellView(AccountStore store, bool launchAtLogin)
     {
         this.store = store;
@@ -48,38 +62,26 @@ public sealed partial class ShellView : WpfUserControl
         root.RowDefinitions.Add(new RowDefinition());
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        var header = new Grid { Margin = new Thickness(20, 16, 14, 14) };
-        header.Background = System.Windows.Media.Brushes.Transparent;
-        header.MouseLeftButtonDown += (_, _) => DragRequested?.Invoke();
+        var header = new Grid { Margin = new Thickness(16, 5, 12, 5), Background = System.Windows.Media.Brushes.Transparent };
+        header.MouseLeftButtonDown += (_, e) => { if (e.OriginalSource == header) DragRequested?.Invoke(); };
         header.ColumnDefinitions.Add(new ColumnDefinition());
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var brand = new StackPanel { Orientation = WpfOrientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        var logo = PresentationTheme.AppIcon(20);
-        logo.Margin = new Thickness(0, 0, 9, 0);
-        brand.Children.Add(logo);
-        brand.Children.Add(Text("OpenUsage", 17, FontWeights.SemiBold));
-        header.Children.Add(brand);
-        refreshButton = IconButton("Refresh", "Refresh Usage", () => RefreshRequested?.Invoke());
-        Grid.SetColumn(refreshButton, 1); header.Children.Add(refreshButton);
-        var hide = IconButton("Close", "Hide OpenUsage", () => HideRequested?.Invoke());
-        Grid.SetColumn(hide, 2); header.Children.Add(hide);
-        root.Children.Add(header);
-
-        var nav = new Grid();
-        for (var i = 0; i < 3; i++) nav.ColumnDefinitions.Add(new ColumnDefinition());
-        var names = new[] { "Overview", "Accounts", "Settings" };
-        for (var i = 0; i < names.Length; i++)
+        var nav = new StackPanel { Orientation = WpfOrientation.Horizontal };
+        foreach (var page in new[] { "Overview", "Accounts" })
         {
-            var page = names[i];
             var button = Button(page, "SegmentButton", () => Navigate(page));
-            button.MinHeight = 32;
-            navigation.Add(page, button);
-            Grid.SetColumn(button, i); nav.Children.Add(button);
+            navigation.Add(page, button); nav.Children.Add(button);
         }
-        var navSurface = new Border { Child = nav, CornerRadius = new CornerRadius(9), Padding = new Thickness(3), Margin = new Thickness(16, 0, 16, 4) };
-        navSurface.SetResourceReference(Border.BackgroundProperty, "Surface");
-        Grid.SetRow(navSurface, 1); root.Children.Add(navSurface);
+        header.Children.Add(nav);
+        var actions = new StackPanel { Orientation = WpfOrientation.Horizontal };
+        var mark = Button("", "IconButton", () => HideRequested?.Invoke());
+        mark.Content = PresentationTheme.AppIcon(20);
+        AutomationProperties.SetName(mark, "Hide OpenUsage"); actions.Children.Add(mark);
+        refreshButton = IconButton("Refresh", "Refresh Usage", () => RefreshRequested?.Invoke());
+        actions.Children.Add(refreshButton);
+        var settings = IconButton("Settings", "Settings", () => Navigate("Settings"));
+        navigation.Add("Settings", settings); actions.Children.Add(settings);
+        Grid.SetColumn(actions, 1); header.Children.Add(actions); root.Children.Add(header);
         Grid.SetRow(pageHost, 2); root.Children.Add(pageHost);
 
         var footer = new Grid { Margin = new Thickness(20, 9, 16, 14) };
@@ -106,6 +108,7 @@ public sealed partial class ShellView : WpfUserControl
         if (currentPage == "Overview") Dashboard.Render(store, statuses);
         else if (currentPage == "Accounts") Accounts.Render(store, statuses);
         UpdateQuickSelection();
+        ContentChanged?.Invoke();
     }
 
     public void Navigate(string page)
@@ -136,6 +139,7 @@ public sealed partial class ShellView : WpfUserControl
             pageHost.Content = overviewPage;
             Dashboard.Render(store, statuses);
         }
+        ContentChanged?.Invoke();
     }
 
     private FrameworkElement QuickControls()

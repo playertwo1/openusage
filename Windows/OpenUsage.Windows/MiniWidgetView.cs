@@ -47,19 +47,35 @@ public sealed class MiniWidgetView : C.UserControl
 {
     public event Action? PressStarted;
     public event Action? HoverStarted;
+    public event Action? CollapseRequested;
 
     public MiniWidgetView() { MiniParts.Dark(this); }
 
     public void Render(IReadOnlyList<MiniRow> rows, DisplayPreferences display)
     {
+        if (display.MiniCollapsed)
+        {
+            var ball = new C.Border { Width = 32, Height = 32, CornerRadius = new W.CornerRadius(16), BorderThickness = new W.Thickness(1),
+                Child = PresentationTheme.AppIcon(15), Focusable = true, Cursor = W.Input.Cursors.Hand };
+            ball.SetResourceReference(C.Border.BackgroundProperty, "Surface");
+            ball.SetResourceReference(C.Border.BorderBrushProperty, "Border");
+            ball.MouseLeftButtonDown += (_, _) => PressStarted?.Invoke();
+            ball.MouseEnter += (_, _) => HoverStarted?.Invoke();
+            ball.KeyDown += (_, e) => { if (e.Key is W.Input.Key.Enter or W.Input.Key.Space) { CollapseRequested?.Invoke(); e.Handled = true; } };
+            A.AutomationProperties.SetName(ball, "Expand Mini Widget");
+            Content = ball; return;
+        }
         var vertical = display.MiniVertical;
         var panel = new C.StackPanel { Orientation = vertical ? C.Orientation.Vertical : C.Orientation.Horizontal };
-        var grip = MiniParts.Text(vertical ? "⋯" : "⋮⋮", 10, "Muted"); grip.Opacity = .5; grip.HorizontalAlignment = W.HorizontalAlignment.Center;
-        grip.Margin = vertical ? new W.Thickness(0, 0, 0, 8) : new W.Thickness(0, 0, 10, 0); panel.Children.Add(grip);
+        var grip = new C.Button { Content = PresentationTheme.Icon("Minus", 12), Width = 18, Height = 24, MinHeight = 0, Padding = new W.Thickness(0) };
+        grip.SetResourceReference(StyleProperty, "IconButton");
+        A.AutomationProperties.SetName(grip, "Collapse Mini Widget");
+        grip.Click += (_, _) => CollapseRequested?.Invoke();
+        grip.Margin = vertical ? new W.Thickness(0, 0, 0, 3) : new W.Thickness(0, 0, 5, 0); panel.Children.Add(grip);
         foreach (var row in rows) panel.Children.Add(Cell(row, display, vertical));
         if (rows.Count == 0) panel.Children.Add(MiniParts.Text("No usage yet", 11, "Muted"));
-        var pill = new C.Border { CornerRadius = new W.CornerRadius(14), BorderThickness = new W.Thickness(1), Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x1C, 0x1C, 0x1E)), Cursor = W.Input.Cursors.Arrow,
-            Padding = vertical ? new W.Thickness(8, 6, 8, 10) : new W.Thickness(10, 7, 14, 7), Child = panel };
+        var pill = new C.Border { CornerRadius = new W.CornerRadius(14), BorderThickness = new W.Thickness(1), Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 0, 0)), Cursor = W.Input.Cursors.Arrow,
+            Padding = new W.Thickness(8, 5, 8, 5), Child = panel };
         pill.SetResourceReference(C.Border.BorderBrushProperty, "Border");
         pill.MouseLeftButtonDown += (_, e) => { if (e.ChangedButton == W.Input.MouseButton.Left) PressStarted?.Invoke(); };
         pill.MouseEnter += (_, _) => HoverStarted?.Invoke();
@@ -68,18 +84,25 @@ public sealed class MiniWidgetView : C.UserControl
 
     private static W.UIElement Cell(MiniRow row, DisplayPreferences display, bool vertical)
     {
-        var cell = new C.Grid { Width = 28, Margin = vertical ? new W.Thickness(0, 0, 0, 8) : new W.Thickness(0, 0, 10, 0) };
+        var cell = new C.Grid { Width = 112, Margin = vertical ? new W.Thickness(0, 0, 0, 5) : new W.Thickness(0, 0, 7, 0) };
         var stack = new C.StackPanel();
-        var label = MiniParts.Text(row.Short, 9, "Muted", true); label.HorizontalAlignment = W.HorizontalAlignment.Center; stack.Children.Add(label);
-        stack.Children.Add(Bar(row.Session, display, "S5h")); stack.Children.Add(Bar(row.Weekly, display, "Swk"));
+        var ordinal = new string(row.Short.Where(char.IsDigit).ToArray());
+        var label = MiniParts.Text(row.Account.Kind.Name() + (ordinal.Length == 0 ? "" : " " + ordinal), 10, "Foreground", true);
+        label.Margin = new W.Thickness(0, 0, 8, 0); stack.Children.Add(label);
+        stack.Children.Add(Window(row.Session, display, "S5h")); stack.Children.Add(Window(row.Weekly, display, "Swk"));
         cell.Children.Add(stack);
-        if (row.Alert != "")
-        {
-            var dot = new S.Ellipse { Width = 6, Height = 6, HorizontalAlignment = W.HorizontalAlignment.Right, VerticalAlignment = W.VerticalAlignment.Top, Margin = new W.Thickness(0, -3, -4, 0) };
-            dot.SetResourceReference(S.Shape.FillProperty, row.Alert); cell.Children.Add(dot);
-        }
         A.AutomationProperties.SetName(cell, $"{row.Account.Kind.Name()}: " + string.Join(", ", new[] { row.Session, row.Weekly }.OfType<Metric>().Select(m => $"{m.Label} {MetricPresentation.Value(m, display)}")));
         return cell;
+    }
+
+    private static W.UIElement Window(Metric? metric, DisplayPreferences display, string tone)
+    {
+        var row = new C.Grid { Margin = new W.Thickness(0, 2, 0, 0) };
+        row.ColumnDefinitions.Add(new() { Width = new W.GridLength(1, W.GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new() { Width = new W.GridLength(34) });
+        var bar = Bar(metric, display, tone); row.Children.Add(bar);
+        var value = MiniParts.Text(metric is null ? "—" : MetricPresentation.Value(metric, display).Split(' ')[0], 10, "Foreground");
+        value.HorizontalAlignment = W.HorizontalAlignment.Right; C.Grid.SetColumn(value, 1); row.Children.Add(value); return row;
     }
 
     private static W.UIElement Bar(Metric? metric, DisplayPreferences display, string tone)
@@ -88,7 +111,8 @@ public sealed class MiniWidgetView : C.UserControl
         var track = new C.Border { CornerRadius = new W.CornerRadius(2), Opacity = metric is null ? .3 : 1 }; track.SetResourceReference(C.Border.BackgroundProperty, "Track"); bar.Children.Add(track);
         if (metric is not null && MetricPresentation.Fill(metric, display) is double fill)
         {
-            var inner = new C.Border { CornerRadius = new W.CornerRadius(2), HorizontalAlignment = W.HorizontalAlignment.Left, Width = 28 * Math.Clamp(fill, 0, 100) / 100 }; inner.SetResourceReference(C.Border.BackgroundProperty, tone); bar.Children.Add(inner);
+            var inner = new C.Border { CornerRadius = new W.CornerRadius(2), HorizontalAlignment = W.HorizontalAlignment.Left }; inner.SetResourceReference(C.Border.BackgroundProperty, tone); bar.Children.Add(inner);
+            bar.SizeChanged += (_, e) => inner.Width = e.NewSize.Width * Math.Clamp(fill, 0, 100) / 100;
         }
         return bar;
     }
@@ -98,6 +122,8 @@ public sealed class MiniWidgetView : C.UserControl
 public sealed class MiniFlyoutView : C.UserControl
 {
     public event Action? OpenRequested;
+    public event Action? ContentChanged;
+    private Guid? expanded;
 
     public MiniFlyoutView() { MiniParts.Dark(this); }
 
@@ -110,14 +136,20 @@ public sealed class MiniFlyoutView : C.UserControl
         var legend = new C.StackPanel { Orientation = C.Orientation.Horizontal, HorizontalAlignment = W.HorizontalAlignment.Right };
         legend.Children.Add(Dot("S5h")); legend.Children.Add(MiniParts.Text("5h", 10, "Muted")); legend.Children.Add(Dot("Swk")); legend.Children.Add(MiniParts.Text("Week" + (updated is DateTimeOffset at ? $" · Updated {at.ToLocalTime():HH:mm}" : ""), 10, "Muted"));
         head.Children.Add(legend); panel.Children.Add(head);
-        foreach (var row in rows) panel.Children.Add(Row(store, row, display));
+        foreach (var row in rows) panel.Children.Add(Row(store, row, display, () =>
+        {
+            expanded = expanded == row.Account.Id ? null : row.Account.Id;
+            Render(store, rows, updated, status); ContentChanged?.Invoke();
+        }));
         var foot = new C.Grid { Margin = new W.Thickness(14, 8, 14, 2) };
         foot.Children.Add(MiniParts.Text(status, 10, "Muted"));
         var open = MiniParts.Text("Open OpenUsage ↗", 10, "Accent"); open.HorizontalAlignment = W.HorizontalAlignment.Right; open.Cursor = W.Input.Cursors.Hand;
         open.MouseLeftButtonUp += (_, _) => OpenRequested?.Invoke(); foot.Children.Add(open);
         panel.Children.Add(Rule()); panel.Children.Add(foot);
-        var surface = new C.Border { CornerRadius = new W.CornerRadius(8), BorderThickness = new W.Thickness(1), Child = panel, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x20, 0x20, 0x20)) };
-        surface.SetResourceReference(C.Border.BorderBrushProperty, "Border"); Content = surface; A.AutomationProperties.SetName(surface, "OpenUsage Usage Flyout");
+        var surface = new C.Border { CornerRadius = new W.CornerRadius(8), BorderThickness = new W.Thickness(1), Child = panel, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 0, 0)) };
+        surface.SetResourceReference(C.Border.BorderBrushProperty, "Border");
+        Content = new C.ScrollViewer { Content = surface, VerticalScrollBarVisibility = C.ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = C.ScrollBarVisibility.Disabled };
+        A.AutomationProperties.SetName(surface, "OpenUsage Usage Flyout");
     }
 
     private static W.UIElement Dot(string tone)
@@ -126,7 +158,7 @@ public sealed class MiniFlyoutView : C.UserControl
     }
     private static W.UIElement Rule() { var line = new C.Border { Height = 1, Margin = new W.Thickness(0, 4, 0, 0) }; line.SetResourceReference(C.Border.BackgroundProperty, "Border"); return line; }
 
-    private static W.UIElement Row(AccountStore store, MiniRow row, DisplayPreferences display)
+    private W.UIElement Row(AccountStore store, MiniRow row, DisplayPreferences display, Action toggle)
     {
         var grid = new C.Grid { Height = 34, Margin = new W.Thickness(14, 0, 14, 0) };
         foreach (var width in new[] { 22d, 0, 74, 82, 84 }) grid.ColumnDefinitions.Add(new() { Width = width == 0 ? new W.GridLength(1, W.GridUnitType.Star) : new W.GridLength(width) });
@@ -140,7 +172,24 @@ public sealed class MiniFlyoutView : C.UserControl
         Put(grid, Value(row.Session, display, row.Session?.Percent >= 85 ? "Danger" : "Foreground"), 2);
         Put(grid, Value(row.Weekly, display, row.Weekly?.Percent >= 85 ? "Danger" : row.Pace?.RunsOut == true ? "Warning" : "Foreground"), 3);
         var verdict = MiniParts.Text(row.Pace is null ? (row.Session is not null ? "5h window" : "") : row.Pace.Verdict, 11, row.Pace is null ? "Muted" : row.Pace.RunsOut ? "Warning" : "Success"); verdict.HorizontalAlignment = W.HorizontalAlignment.Right; Put(grid, verdict, 4);
-        var host = new C.StackPanel(); host.Children.Add(Rule()); host.Children.Add(grid);
+        var host = new C.StackPanel(); host.Children.Add(Rule());
+        var button = new C.Button { Content = grid, Padding = new W.Thickness(0), MinHeight = 34, HorizontalContentAlignment = W.HorizontalAlignment.Stretch };
+        button.SetResourceReference(StyleProperty, "QuietButton");
+        A.AutomationProperties.SetName(button, $"Weekly Chart {row.Account.Id}");
+        A.AutomationProperties.SetItemStatus(button, expanded == row.Account.Id ? "Expanded" : "Collapsed");
+        button.Click += (_, _) => toggle(); host.Children.Add(button);
+        if (expanded == row.Account.Id)
+        {
+            var details = new C.StackPanel { Margin = new W.Thickness(18, 8, 18, 12) };
+            details.Children.Add(MiniParts.Text("Weekly Pace", 12, "Foreground", true));
+            if (row.Pace is WeeklyPace pace)
+            {
+                details.Children.Add(new C.Viewbox { Child = DashboardView.Chart(pace), Margin = new W.Thickness(0, 10, 0, 8) });
+                details.Children.Add(MiniParts.Text($"{pace.Used:0}% used · Projected {pace.Projection:0}%", 11, "Muted"));
+            }
+            else details.Children.Add(MiniParts.Text("No weekly window with a reset time is available.", 11, "Muted"));
+            host.Children.Add(details);
+        }
         A.AutomationProperties.SetName(host, $"{row.Account.Kind.Name()} {row.Short}");
         return host;
     }

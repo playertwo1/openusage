@@ -34,15 +34,20 @@ public static class UiChecks
                 form.StartPosition = System.Windows.Forms.FormStartPosition.Manual; form.Location = new System.Drawing.Point(80, 80);
                 form.TopMost = true; form.Show(); form.Activate();
                 for (var i = 0; i < 30; i++) { System.Windows.Forms.Application.DoEvents(); Thread.Sleep(50); }
+                Check(form.Height <= System.Windows.Forms.Screen.FromRectangle(form.Bounds).WorkingArea.Height, "Content Fit Must Stay Inside The Monitor");
+                var host = form.Controls.OfType<System.Windows.Forms.Integration.ElementHost>().Single();
+                var shell = (ShellView)host.Child;
+                Check(!Descendants(shell).OfType<C.ScrollViewer>().Any(s => s.ScrollableHeight > 1), "A Fitting Empty Panel Must Not Require Scrolling");
                 using var shot = new System.Drawing.Bitmap(form.Width, form.Height);
                 using (var graphics = System.Drawing.Graphics.FromImage(shot)) graphics.CopyFromScreen(form.Location, System.Drawing.Point.Empty, form.Size);
                 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!); shot.Save(path);
                 Console.WriteLine($"Window Smoke: Size={form.Width}x{form.Height}");
                 var miniStore = new AccountStore(Path.Combine(directory, "mini"));
                 var one = new Account(Guid.NewGuid(), ProviderKind.Claude, "Work", new Credential("fixture-only"));
-                miniStore.Add(one); miniStore.Edit(s => { s.Display.MiniWidget = true; s.Display.MiniX = .5; s.Display.MiniY = .3; });
+                miniStore.Add(one); miniStore.Edit(s => { s.Display.MiniWidget = true; s.Display.MiniCollapsed = false; s.Display.MiniX = .5; s.Display.MiniY = .3; });
                 var miniStatuses = new Dictionary<Guid, AccountStatus> { [one.Id] = new() { Snapshot = new("Max", [new("Session", 34, ResetsAt: DateTimeOffset.UtcNow.AddHours(3)), new("Weekly", 83, ResetsAt: DateTimeOffset.UtcNow.AddDays(4))]), FetchedAt = DateTimeOffset.UtcNow } };
                 using var widget = new MiniWidgetForm(miniStore);
+                widget.PreferenceChanged += change => { miniStore.Edit(s => change(s.Display)); widget.Render(miniStatuses, "Fixture usage"); };
                 widget.Render(miniStatuses, "Refreshes every five minutes"); widget.ShowFlyout();
                 for (var i = 0; i < 20; i++) { System.Windows.Forms.Application.DoEvents(); Thread.Sleep(50); }
                 var union = System.Drawing.Rectangle.Union(widget.Bounds, System.Drawing.Rectangle.FromLTRB(widget.Left, widget.Bottom, widget.Left + 420, widget.Bottom + 260));
@@ -50,6 +55,12 @@ public static class UiChecks
                 using (var graphics = System.Drawing.Graphics.FromImage(miniShot)) graphics.CopyFromScreen(union.Location, System.Drawing.Point.Empty, union.Size);
                 miniShot.Save(Path.ChangeExtension(path, ".mini.png"));
                 Console.WriteLine($"Mini Widget Smoke: Visible={widget.Visible} Bounds={widget.Bounds}");
+                var widgetView = (MiniWidgetView)widget.Controls.OfType<System.Windows.Forms.Integration.ElementHost>().Single().Child;
+                Click(Descendants(widgetView).OfType<C.Button>().Single(b => AutomationProperties.GetName(b) == "Collapse Mini Widget"));
+                Check(miniStore.State.Display.MiniCollapsed && widget.Width == widget.Height, "The Real Widget Must Resize To A Circle When Collapsed");
+                widget.ShowFlyout();
+                Check(miniStore.State.Display.MiniCollapsed && widget.Width == widget.Height, "Opening The Hover Panel Must Keep The Ball Collapsed");
+                Console.WriteLine($"Collapsed Widget Smoke: Size={widget.Width}x{widget.Height}");
             }
             catch (Exception error) { failure = error; }
         });
@@ -59,13 +70,20 @@ public static class UiChecks
 
     private static void CheckUi(string directory, string? renderPath)
     {
+        var workArea = new System.Drawing.Rectangle(-1920, 0, 1920, 1040);
+        var corner = MiniWidgetForm.SnapBounds(new(-1910, 20, 200, 60), workArea, 1);
+        Check(corner.Left == -1914 && corner.Top == 6, "Mini Must Snap To Both Edges At A Corner On A Negative-Origin Monitor");
+        var bottom = MiniWidgetForm.SnapBounds(new(-225, 950, 200, 60), workArea, 1.5);
+        Check(bottom.Right == -9 && bottom.Bottom == 1031, "Mini Magnetism Must Respect DPI And The Taskbar Work Area");
+        var free = new System.Drawing.Rectangle(-1000, 400, 200, 60);
+        Check(MiniWidgetForm.SnapBounds(free, workArea, 1) == free, "Mini Must Move Freely Away From Edges");
         var store = new AccountStore(directory);
         foreach (var existing in store.State.Accounts.ToArray()) store.Remove(existing.Id);
         var codex = new Account(Guid.NewGuid(), ProviderKind.Codex, "Personal", new Credential("fixture-only"));
         var claude = new Account(Guid.NewGuid(), ProviderKind.Claude, "Work", new Credential("fixture-only-claude"));
         store.Add(codex); store.Add(claude);
         store.Edit(s => s.Display.Theme = ColorTheme.Light);
-        var now = new DateTimeOffset(2026, 10, 29, 12, 0, 0, TimeSpan.Zero);
+        var now = DateTimeOffset.UtcNow;
         var snapshot = new UsageSnapshot("Pro", [new("Session", 23, ResetsAt: now.AddHours(3)), new("Weekly", 64, ResetsAt: now.AddDays(4)), new("Extra Usage", 100, Unit: "credits")]);
         var statuses = new Dictionary<Guid, AccountStatus>
         {
@@ -79,9 +97,13 @@ public static class UiChecks
         shell.Render(statuses, false, "Updated just now · Refreshes every 5 min");
         shell.Dashboard.LayoutChanged += () => { shell.RefreshPreferences(); shell.Render(statuses, false, "Updated just now"); };
         Render(shell, 440, 700, null);
+        shell.Measure(new System.Windows.Size(440, double.PositiveInfinity));
+        var collapsedHeight = shell.MeasureContentHeight(440);
         var open = Descendants(shell).OfType<C.Border>().First(b => AutomationProperties.GetName(b) == "ChatGPT Personal");
         open.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left) { RoutedEvent = UIElement.MouseLeftButtonUpEvent });
-        Render(shell, 440, 700, renderPath);
+        shell.Measure(new System.Windows.Size(440, double.PositiveInfinity));
+        Check(shell.MeasureContentHeight(440) > collapsedHeight, "Opening A Chart Must Increase The Natural Window Height");
+        Render(shell, 440, shell.MeasureContentHeight(440), renderPath);
         Check(Descendants(shell).OfType<C.TextBlock>().Any(t => t.Text == "23%"), "Usage Values Must Render");
         Check(Descendants(shell).OfType<C.TextBlock>().Any(t => t.Text.StartsWith("Up to ")), "Expanding A Row Must Show The Weekly Pace");
         Check(Descendants(shell).OfType<C.Border>().Count(b => AutomationProperties.GetName(b).Contains(" Personal") || AutomationProperties.GetName(b).Contains(" Work")) == 2, "Every Account Must Have One Row");
@@ -100,19 +122,48 @@ public static class UiChecks
         var miniRows = MiniRow.Build(store, statuses);
         Check(miniRows.Select(r => r.Short).SequenceEqual(new[] { "Cx", "C" }), "Mini Widget Labels Must Follow Provider And Account Order");
         Check(new MiniRow(codex, "Cx", new Metric("Session", 90), null, null).Alert == "Danger", "Mini Widget Must Flag Use From 85 Percent");
+        store.Edit(s => s.Display.MiniCollapsed = false);
         var pill = new MiniWidgetView(); pill.Render(miniRows, store.State.Display);
-        Render(pill, 220, 64, Variant(renderPath, "mini"));
-        Check(Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "Cx") && Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "C"), "Mini Widget Must Label Every Account");
-        store.Edit(s => s.Display.MiniVertical = true); pill.Render(miniRows, store.State.Display); Render(pill, 64, 180, Variant(renderPath, "mini-vertical")); store.Edit(s => s.Display.MiniVertical = false);
+        pill.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        Check(pill.DesiredSize.Width < 280 && pill.DesiredSize.Height < 65, "Two-Account Mini Must Stay Compact Without Hiding Either Window");
+        Render(pill, pill.DesiredSize.Width, pill.DesiredSize.Height, Variant(renderPath, "mini"));
+        Check(Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "ChatGPT") && Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "Claude"), "Mini Widget Must Label Every Account");
+        store.Edit(s => s.Display.MiniVertical = true); pill.Render(miniRows, store.State.Display); Render(pill, 200, 180, Variant(renderPath, "mini-vertical")); store.Edit(s => s.Display.MiniVertical = false);
         var flyout = new MiniFlyoutView(); flyout.Render(store, miniRows, DateTimeOffset.UtcNow, "Refreshes every five minutes");
         Render(flyout, 420, 220, Variant(renderPath, "mini-flyout"));
         Check(Descendants(flyout).OfType<C.TextBlock>().Any(t => t.Text == "Open OpenUsage ↗"), "Flyout Must Offer To Open The App");
+        flyout.Measure(new System.Windows.Size(402, double.PositiveInfinity));
+        var closedFlyoutHeight = flyout.DesiredSize.Height;
+        Click(Descendants(flyout).OfType<C.Button>().Single(b => AutomationProperties.GetName(b) == $"Weekly Chart {codex.Id}"));
+        Render(flyout, 402, 420, null);
+        flyout.Measure(new System.Windows.Size(402, double.PositiveInfinity));
+        Check(flyout.DesiredSize.Height > closedFlyoutHeight && Descendants(flyout).OfType<C.Canvas>().Any(c => AutomationProperties.GetName(c).StartsWith("Weekly pace chart:")), "Clicking A Flyout Account Must Expand Its Real Weekly Chart");
+        Render(flyout, 402, flyout.DesiredSize.Height, Variant(renderPath, "flyout-chart"));
+        Click(Descendants(flyout).OfType<C.Button>().Single(b => AutomationProperties.GetName(b) == $"Weekly Chart {claude.Id}"));
+        Render(flyout, 402, 420, null);
+        Check(!Descendants(flyout).OfType<C.Canvas>().Any(c => AutomationProperties.GetName(c).StartsWith("Weekly pace chart:")) && Descendants(flyout).OfType<C.TextBlock>().Any(t => t.Text.StartsWith("No weekly window with")), "A Second Account Must Replace The Open Chart And Explain Missing Reset Data");
         var balance = new Metric("Balance", 12, Unit: "usd");
         Check(MetricPresentation.Value(balance, store.State.Display) == balance.Display, "Balance Must Not Be Reversed Or Estimated");
         Check(MetricPresentation.Value(new("Cost", 12, 20, "usd"), store.State.Display) == $"${8d:0.00} left", "Bounded Usage Can Show Remaining");
         Check(MetricPresentation.Fill(new("Session", 23), store.State.Display) == 77, "Bar Must Match Remaining Value");
         Check(MetricPresentation.Reset(now.AddMinutes(30), new(), now) == "Resets in 30m", "Reset Countdown");
         Check(MetricPresentation.Reset(now.AddMinutes(-1), new(), now) == "Reset due", "Expired Reset Label");
+        Check(!Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "5h" || t.Text == "Week"), "Mini Must Keep Window Labels Hidden");
+        Check(!Descendants(pill).OfType<System.Windows.Shapes.Ellipse>().Any(), "Mini Must Not Draw Alert Dots");
+        var collapsed = false;
+        pill.CollapseRequested += () => { store.Edit(s => s.Display.MiniCollapsed = !s.Display.MiniCollapsed); collapsed = true; };
+        Click(Descendants(pill).OfType<C.Button>().Single(b => AutomationProperties.GetName(b) == "Collapse Mini Widget"));
+        Check(collapsed && new AccountStore(directory).State.Display.MiniCollapsed, "Collapse Button Must Persist The Ball Mode");
+        pill.Render(miniRows, store.State.Display);
+        Render(pill, 32, 32, Variant(renderPath, "ball"));
+        Check(pill.DesiredSize.Width == 32 && pill.DesiredSize.Height == 32 && !Descendants(pill).OfType<C.TextBlock>().Any(), "Ball Mode Must Be A Single Small Icon Without Metrics");
+        var ball = Descendants(pill).OfType<C.Border>().Single(b => AutomationProperties.GetName(b) == "Expand Mini Widget");
+        var ballHovered = false; pill.HoverStarted += () => ballHovered = true;
+        ball.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = System.Windows.Input.Mouse.MouseEnterEvent });
+        Check(ballHovered, "Hovering The Collapsed Ball Must Request The Usage Panel");
+        using (var inputSource = new System.Windows.Interop.HwndSource(new System.Windows.Interop.HwndSourceParameters("Fixture Input")))
+            ball.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, inputSource, 0, System.Windows.Input.Key.Enter) { RoutedEvent = UIElement.KeyDownEvent });
+        Check(!store.State.Display.MiniCollapsed, "The Ball Must Expand With Keyboard Activation");
         shell.Navigate("Settings"); Render(shell, 440, 700, Variant(renderPath, "settings"));
         var resetTimes = Descendants(shell).OfType<C.ComboBox>().Single(c => AutomationProperties.GetName(c) == "Reset Times");
         resetTimes.SelectedIndex = 1;
@@ -139,7 +190,7 @@ public static class UiChecks
         shown[0].IsChecked = false;
         Check(store.State.Hidden.Count == 1, "Visibility Must Still Be Saved");
         store.Edit(s => { s.Display.Theme = ColorTheme.Dark; s.Display.HideAccountNames = false; s.Hidden.Clear(); });
-        shell.RefreshPreferences(); shell.Navigate("Overview"); Render(shell, 440, 700, Variant(renderPath, "dark"));
+        shell.RefreshPreferences(); shell.Navigate("Overview"); Render(shell, 440, shell.MeasureContentHeight(440), Variant(renderPath, "dark"));
         Check(((SolidColorBrush)PresentationTheme.Brush(shell, "Background")).Color.R < 80, "Dark Theme Must Actually Apply");
         store.Edit(s => { s.Display.Layout = DashboardLayout.List; s.Display.FavoritesOnly = true; });
         shell.RefreshPreferences(); shell.Render(statuses, false, "Updated just now"); Render(shell, 400, 600, Variant(renderPath, "compact"));

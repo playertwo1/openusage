@@ -23,6 +23,11 @@ public sealed partial class DashboardView : C.UserControl
     private readonly C.ScrollViewer scroll;
     private AccountStore store = null!;
     private DisplayPreferences display = new();
+    public double MeasureContentHeight(double width)
+    {
+        groups.Measure(new W.Size(Math.Max(1, width - 44), double.PositiveInfinity));
+        return groups.DesiredSize.Height + 22;
+    }
     public DashboardView(bool manage = false)
     {
         this.manage = manage;

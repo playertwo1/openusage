@@ -22,6 +22,21 @@ executable separately from macOS releases.
 
 ## Accounts And Usage
 
+The panel adjusts its height when you change pages, filters, accounts or expand a weekly chart.
+Its maximum height is the monitor's work area; excess content remains reachable by scrolling.
+Settings → Appearance → Soft Transparency switches between slight whole-window transparency
+and an opaque panel. High contrast always uses an opaque panel. This effect does not blur the desktop.
+The mini widget uses compact provider labels (numbered for multiple accounts of the same provider),
+two percentage rows, and the same soft-transparency preference. Hover for account details.
+Dragging the widget within 32 logical pixels of a work-area edge attracts it to that edge with a
+6-pixel margin. Corners attract on both axes, and the saved position is restored per monitor.
+The widget starts collapsed to a 32-logical-pixel ball. Click it to show the mini panel; use the minus
+button or the right-click menu to collapse it again. The collapsed state is saved. Both modes can
+be dragged and snapped to edges. Alert dots are not shown on the mini panel.
+Hovering over the ball also opens the usage panel without expanding the mini. Click an account
+in that panel to show its weekly pace chart in place; click again to close it. Only one chart is
+expanded at a time. Accounts without a weekly reset time show an explanation instead of a chart.
+
 Use **Add Account** to sign in. Claude, ChatGPT, Cursor, Antigravity, Copilot and Grok use browser or
 device-code sign-in. Ollama, OpenCode, OpenRouter and Z.ai use API keys. OpenRouter balance requires
 a Management key. Multiple accounts per provider are supported.
@@ -80,7 +95,14 @@ It does not yet include the macOS CLI/cache export, screenshot sharing, spending
 automatic application updates or an installer. Provider-reported reset counts can
 be shown; the Windows app does not spend them. The macOS release workflow does not publish Windows.
 
-Overview is one grouped list with a row per account, in the saved order. Each row has a double ring (outer is the 5h Session, inner is Weekly), the two windows with their reset times, and a pace marker on the Weekly bar. Colours identify the window and never change with use; a number turns red from 85% used and amber when the weekly projection passes 100%. Click a row to open the weekly pace chart: cumulative use against an even 14.3% a day, the projection, and the day the limit runs out. Daily use comes from the provider's weekly percentages that OpenUsage saw, so days it was not running show a dash. There is no spend or token total: the providers do not report one. Favorites, hiding and reordering metrics live on the Accounts screen.
+Overview keeps accounts in saved order with a separate heading and two metric lines per account.
+Click the account heading to expand its weekly pace chart. The chart compares observed weekly
+usage with an even pace and shows the projection. No spend or token totals are estimated.
+Favorites, metric visibility and reordering live on the Accounts screen.
 
-
-**Mini Widget** is an optional small floating panel (Settings, the tray menu). It shows a short label and two thin bars per account: 5h on top, Week below, with a dot when use passes 85% or the weekly projection passes 100%. Drag it anywhere; hovering or clicking opens a flyout with every account's windows, reset times and pace. Right-click for Always on top, Lock position, Vertical layout, Open OpenUsage, Refresh now and Hide widget. The window is borderless, stays out of the taskbar, does not take focus, snaps to screen edges within 12px, and remembers its place per monitor, moving back into view when the screen setup changes. Like the main window it is opaque, with no translucent material.
+**Mini Widget** is an optional floating panel, enabled in Settings or the tray menu. It can be
+collapsed to a ball. Hover over the ball for account usage, then click an account to expand its
+chart in that panel. Clicking the ball opens the compact mini with two bars and percentages per
+account; its minus button collapses it again. Drag either view to snap it to edges and corners.
+The widget stays out of the taskbar, does not take focus and remembers its position per monitor.
+Soft Transparency is optional; it does not provide Acrylic, Mica or Liquid Glass blur.
