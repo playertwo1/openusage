@@ -3,7 +3,7 @@
 
 The Windows edition lives in [`Windows/`](../Windows/) and is independent of the Swift app and the macOS release pipeline. It is a tray app written in C# on .NET 10. The screens are WPF, hosted by the Windows Forms window and tray lifecycle. It supports the same ten providers (Claude, ChatGPT/Codex, Cursor, Antigravity, Copilot, Grok, Ollama, OpenCode, OpenRouter and Z.ai) and follows the same rule as the Mac app: you sign in to each account inside the app, and it never reads credentials or files that belong to other tools.
 
-**Download:** the portable `OpenUsage-windows-x64.exe` (69 MB, no installer, runs without installing .NET) is on the [Windows 0.1.0 release](https://github.com/playertwo1/openusage/releases/tag/windows-v0.1.0). To build it yourself, run `./script/windows.ps1 publish` with the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Version history is in [`Windows/CHANGELOG.md`](../Windows/CHANGELOG.md) and details are in [docs/windows.md](windows.md). All screenshots below use made-up demo data, not real accounts.
+**Download:** the portable `OpenUsage-windows-x64.exe` (69 MB, no installer, runs without installing .NET) is on the [Windows 0.1.1 release](https://github.com/playertwo1/openusage/releases/tag/windows-v0.1.1). To build it yourself, run `./script/windows.ps1 publish` with the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Version history is in [`Windows/CHANGELOG.md`](../Windows/CHANGELOG.md) and details are in [docs/windows.md](windows.md). All screenshots below use made-up demo data, not real accounts.
 
 ### Overview
 

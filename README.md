@@ -10,7 +10,7 @@ close in the Windows tray or the macOS menu bar, without opening a dashboard for
 </p>
 
 <p align="center">
-  <a href="https://github.com/playertwo1/openusage/releases/download/windows-v0.1.0/OpenUsage-windows-x64.exe"><strong>Download for Windows</strong></a>
+  <a href="https://github.com/playertwo1/openusage/releases/download/windows-v0.1.1/OpenUsage-windows-x64.exe"><strong>Download for Windows</strong></a>
   &nbsp; · &nbsp;
   <a href="https://github.com/robinebers/openusage/releases/latest"><strong>Download for macOS</strong></a>
   &nbsp; · &nbsp;
@@ -24,7 +24,7 @@ The two editions have separate builds and releases; their platform-specific feat
 
 | | Windows | macOS |
 |---|---|---|
-| **Download** | [Portable x64 executable](https://github.com/playertwo1/openusage/releases/download/windows-v0.1.0/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
+| **Download** | [Portable x64 executable](https://github.com/playertwo1/openusage/releases/download/windows-v0.1.1/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
 | **Requirements** | Windows 10 or 11 | macOS 15 Sequoia or later; Apple Silicon or Intel |
 | **Install** | Download and run. No installer or separate .NET installation needed. | Open the DMG and drag OpenUsage to Applications. |
 | **Updates** | Download a newer Windows release manually. | Signed, notarized in-app Sparkle updates. |

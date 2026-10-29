@@ -1,5 +1,10 @@
 # OpenUsage for Windows
 
+## 0.1.1
+
+- **Antigravity rings fixed:** Antigravity names its windows by model family, so the Overview rings, the bars, the mini widget, the weekly pace and the daily history found nothing to show. OpenUsage now uses Session, Gemini 5h or Claude 5h for the 5h window and Weekly, Gemini or Claude Weekly for the week, taking the first one present in that order. They keep the purple and cyan identity colors.
+- **Removed the Ctrl+Alt+W shortcut:** it is the same as AltGr+W, which types the question mark on some keyboard layouts. The mini widget is now turned on from Settings or the tray menu. Ctrl+Alt+U, which opens the panel, is unchanged.
+
 ## 0.1.0
 
 First release of the Windows edition: a C#/.NET 10 tray app that shows the usage limits of the AI coding accounts you add inside it (Claude, Codex, Cursor, Copilot, Antigravity, Grok, Ollama, OpenCode, OpenRouter, Z.ai).
