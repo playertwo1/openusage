@@ -30,21 +30,9 @@ internal static class WindowsIntegration
     }
     public static Icon CreateAppIcon()
     {
-        var image = PresentationTheme.AppIcon(32);
-        PresentationTheme.Apply(image, new DisplayPreferences { Theme = ColorTheme.Light });
-        image.SetValue(System.Windows.Documents.TextElement.ForegroundProperty, new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 111, 214)));
-        image.Measure(new System.Windows.Size(32, 32));
-        image.Arrange(new System.Windows.Rect(0, 0, 32, 32));
-        image.UpdateLayout();
-        var rendered = new System.Windows.Media.Imaging.RenderTargetBitmap(32, 32, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
-        rendered.Render(image);
-        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rendered));
-        using var stream = new MemoryStream(); encoder.Save(stream); stream.Position = 0;
-        using var bitmap = new Bitmap(stream);
-        var handle = bitmap.GetHicon();
-        try { using var icon = Icon.FromHandle(handle); return (Icon)icon.Clone(); }
-        finally { DestroyIcon(handle); }
+        using var stream = typeof(WindowsIntegration).Assembly.GetManifestResourceStream("OpenUsage.AppIcon.ico")
+            ?? throw new InvalidOperationException("Missing Application Icon.");
+        return new Icon(stream, SystemInformation.IconSize);
     }
     public static void RoundWindow(IntPtr handle)
     {
@@ -54,9 +42,6 @@ internal static class WindowsIntegration
     }
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, ref int value, int size);
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool DestroyIcon(IntPtr icon);
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool ReleaseCapture();

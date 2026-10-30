@@ -58,10 +58,10 @@ Settings is a short list in three groups.
 An optional small panel that floats on your desktop. Turn it on from **Settings > General**, the tray menu ("Show Mini Widget").
 
 - **The pill:** compact provider labels, numbered when a provider has multiple accounts, with a percentage and bar for each available 5h and Week window. Hover to read account details. The mini has no alert dots. A vertical layout is also available. Soft Transparency also applies to this widget.
-- **The ball:** click the small collapsed icon to show the mini. Use its minus button or the right-click menu to collapse again. This state is saved; new preferences start in ball mode. Enter or Space also activates the focused ball.
+- **The ball:** click the small collapsed icon to show the mini. Click the mini again, use its minus button or the right-click menu to collapse again. This state is saved; new preferences start in ball mode. Enter or Space also activates the focused ball.
 - **Hover over the ball** to open the usage panel directly. Click an account to expand its weekly pace chart inside that panel; click again to collapse it. The ball stays collapsed. The panel remains open while the pointer is over the ball or the panel.
 - **Drag it anywhere** by its surface. It snaps while dragging within 32 logical pixels of any work-area edge, leaving a 6-pixel margin. Corners snap on both axes. It remembers its place **per monitor** and moves back into view if your resolution or monitors change.
-- **Hover (or click)** to open a flyout with every account's windows, reset times and verdict. It opens on whichever side has room and closes when the mouse leaves.
+- **Hover** to open a flyout with every account's windows, reset times and verdict. It opens on whichever side has room and closes when the mouse leaves.
 - **Right-click** for Always on top, Lock position, Vertical layout, Open OpenUsage, Refresh now and Hide widget.
 - It has no border, stays out of the taskbar and Alt+Tab, and never takes keyboard focus.
 

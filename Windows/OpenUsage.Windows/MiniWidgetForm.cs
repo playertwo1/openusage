@@ -58,6 +58,8 @@ public sealed class MiniWidgetForm : Form
     // Sizes the window to its content and puts it back inside the work area.
     private void Fit()
     {
+        view.UpdateLayout();
+        view.InvalidateMeasure();
         view.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
         var scale = DeviceDpi / 96d; var size = view.DesiredSize;
         var wasVisible = Visible;
@@ -102,7 +104,7 @@ public sealed class MiniWidgetForm : Form
         Snap(); SavePosition();
     }
 
-    private void ClickWidget() { if (store.State.Display.MiniCollapsed) ToggleCollapsed(); else ShowFlyout(); }
+    private void ClickWidget() => ToggleCollapsed();
     private void ToggleCollapsed()
     {
         hover.Stop(); flyout.Hide();

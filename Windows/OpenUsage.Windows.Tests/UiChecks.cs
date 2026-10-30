@@ -70,6 +70,46 @@ public static class UiChecks
 
     private static void CheckUi(string directory, string? renderPath)
     {
+        var toggleStore = new AccountStore(directory);
+        toggleStore.Edit(s => { s.Display.MiniCollapsed = true; s.Display.MiniLocked = true; });
+        using (var widget = new MiniWidgetForm(toggleStore))
+        {
+            widget.PreferenceChanged += change => { toggleStore.Edit(s => change(s.Display)); widget.Render(new Dictionary<Guid, AccountStatus>(), "Fixture"); };
+            widget.Render(new Dictionary<Guid, AccountStatus>(), "Fixture");
+            var host = widget.Controls.OfType<System.Windows.Forms.Integration.ElementHost>().Single();
+            var view = (MiniWidgetView)host.Child;
+            void Press() => ((C.Border)view.Content).RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(
+                System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left)
+                { RoutedEvent = UIElement.MouseLeftButtonDownEvent });
+            Press();
+            Check(!toggleStore.State.Display.MiniCollapsed, "Clicking The Ball Must Expand The Widget");
+            Check(widget.Width > widget.Height, "Expansion Must Resize The Visible Widget Without A Refresh");
+            Press();
+            Check(toggleStore.State.Display.MiniCollapsed && widget.Width == widget.Height,
+                "Clicking The Expanded Widget Must Restore The Ball");
+            var expand = view.ContextMenu.Items.OfType<C.MenuItem>().Single(item => Equals(item.Header, "Expand widget"));
+            expand.RaiseEvent(new RoutedEventArgs(C.MenuItem.ClickEvent));
+            Check(!toggleStore.State.Display.MiniCollapsed && widget.Width > widget.Height,
+                "Expand Widget Menu Must Resize Immediately Without Refresh Now");
+            Click(Descendants(view).OfType<C.Button>().Single(b => AutomationProperties.GetName(b) == "Collapse Mini Widget"));
+            Check(toggleStore.State.Display.MiniCollapsed && widget.Width == widget.Height,
+                "Minus Button Must Immediately Restore The Ball Size");
+        }
+        using (var api = new Api())
+        using (var form = new MainForm(new AccountStore(Path.Combine(directory, "close")), api))
+        {
+            form.Show();
+            var host = form.Controls.OfType<System.Windows.Forms.Integration.ElementHost>().Single();
+            var close = Descendants((ShellView)host.Child).OfType<C.Button>()
+                .Single(b => AutomationProperties.GetName(b) == "Close Window");
+            close.RaiseEvent(new RoutedEventArgs(C.Button.ClickEvent));
+            Check(!form.Visible && !form.IsDisposed, "Close Button Must Hide The Window Without Exiting");
+            form.Show();
+            form.Close();
+            Check(!form.Visible && !form.IsDisposed, "System Close Must Keep The App Available In The Tray");
+            form.Show();
+            Check(form.Visible && form.Icon is not null, "Hidden Window Must Reopen With Its Application Icon");
+        }
         var workArea = new System.Drawing.Rectangle(-1920, 0, 1920, 1040);
         var corner = MiniWidgetForm.SnapBounds(new(-1910, 20, 200, 60), workArea, 1);
         Check(corner.Left == -1914 && corner.Top == 6, "Mini Must Snap To Both Edges At A Corner On A Negative-Origin Monitor");

@@ -81,6 +81,7 @@ public sealed partial class ShellView : WpfUserControl
         actions.Children.Add(refreshButton);
         var settings = IconButton("Settings", "Settings", () => Navigate("Settings"));
         navigation.Add("Settings", settings); actions.Children.Add(settings);
+        actions.Children.Add(IconButton("Close", "Close Window", () => HideRequested?.Invoke()));
         Grid.SetColumn(actions, 1); header.Children.Add(actions); root.Children.Add(header);
         Grid.SetRow(pageHost, 2); root.Children.Add(pageHost);
 

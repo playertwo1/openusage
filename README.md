@@ -44,6 +44,10 @@ brew install --cask openusage
 Choose **Add Account** on Windows or **Accounts → +** on macOS to sign in.
 Multiple accounts from the same provider are supported.
 
+On Windows, the executable and desktop shortcut use the OpenUsage icon. The **Close Window** (X)
+button hides the panel and keeps OpenUsage running in the tray; use **Exit OpenUsage** to quit.
+On Windows, click the floating widget to switch immediately between the ball and compact mini; hover to see account details.
+
 ## OpenUsage for Windows
 
 A compact native desktop app with three ways to stay informed:

@@ -7,10 +7,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/OpenUsage.ico</ApplicationIcon>
     <AssemblyName>OpenUsage</AssemblyName>
     <Version>0.1.1</Version>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets/OpenUsage.ico" LogicalName="OpenUsage.AppIcon.ico" />
     <EmbeddedResource Include="../../Sources/OpenUsage/Resources/ProviderIcons/*.svg" LogicalName="ProviderIcons.%(Filename).svg" />
   </ItemGroup>
 </Project>
