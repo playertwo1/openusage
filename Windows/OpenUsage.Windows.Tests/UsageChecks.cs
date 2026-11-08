@@ -45,10 +45,6 @@ public static class UsageChecks
         {"usage":{"rolling":{"percent":10,"resetsAt":"2027-01-01T00:00:00Z"},"weekly":{"percent":20,"resetsAt":"2027-01-02T00:00:00Z"},
          "monthly":{"percent":30,"resetsAt":"2027-01-03T00:00:00Z"}}}
         """;
-    private const string ZaiFixture = """
-        {"data":{"limits":[{"type":"CREDIT_LIMIT","unit":6,"number":1,"percentage":30,"nextResetTime":1800000000000},
-         {"name":"TOKENS_LIMIT","unit":3,"number":5,"percentage":10},{"type":"TIME_LIMIT","currentValue":5,"usage":100}]}}
-        """;
     private static JsonNode J(string text) => JsonNode.Parse(text)!;
     private static Metric Row(UsageSnapshot usage, string label) => usage.Metrics.Single(m => m.Label == label);
     private static void Check(bool condition, string message) { if (!condition) throw new Exception("Usage: " + message); }
@@ -63,6 +59,22 @@ public static class UsageChecks
         var claude = UsageMappers.Claude(J(ClaudeFixture));
         Check(claude.Metrics.Select(m => m.Label).SequenceEqual(new[] { "Session", "Weekly", "Sonnet", "Fable", "Extra Usage" }), "Claude metric declaration order");
         Check(Row(claude, "Extra Usage").Value == 12.34 && Row(claude, "Extra Usage").Limit == 100 && Row(claude, "Extra Usage").Unit == "usd", "Claude cents to dollars");
+        Check(Row(claude, "Extra Usage").CurrencyCode == "USD" && Row(claude, "Extra Usage").CurrencyDecimalPlaces == 2, "Claude USD fixture defaults to USD with two decimals");
+        Check(Row(claude, "Session").WindowHours == 5 && Row(claude, "Weekly").WindowHours == 168 && Row(claude, "Sonnet").WindowHours == 168 && Row(claude, "Extra Usage").WindowHours is null, "Claude Windows Carry Their Known Length Only");
+        var unknownWindow = UsageMappers.Codex(J("""{"rate_limit":{"primary_window":{"used_percent":10,"limit_window_seconds":3600}}}"""));
+        Check(Row(unknownWindow, "Session").WindowHours is null, "An Unclassified Codex Window Must Not Claim A Length");
+        var euro = UsageMappers.Claude(J(ClaudeFixture.Replace("\"monthly_limit\":10000", "\"monthly_limit\":10000,\"currency\":\"eur\",\"decimal_places\":2")));
+        Check(Row(euro, "Extra Usage").Value == 12.34 && Row(euro, "Extra Usage").Limit == 100 && Row(euro, "Extra Usage").CurrencyCode == "EUR" && Row(euro, "Extra Usage").CurrencyDecimalPlaces == 2, "Claude EUR billing metadata");
+        var yen = UsageMappers.Claude(J(ClaudeFixture.Replace("\"monthly_limit\":10000", "\"monthly_limit\":10000,\"currency\":\"JPY\",\"decimal_places\":0")));
+        Check(Row(yen, "Extra Usage").Value == 1234 && Row(yen, "Extra Usage").Limit == 10000 && Row(yen, "Extra Usage").CurrencyCode == "JPY" && Row(yen, "Extra Usage").CurrencyDecimalPlaces == 0, "Claude zero-decimal currency uses its own minor unit");
+        foreach (var bad in new[] { "\"currency\":\"EURO\",\"decimal_places\":9", "\"currency\":5,\"decimal_places\":\"x\"", "\"currency\":\"E1R\",\"decimal_places\":2.5", "\"currency\":null,\"decimal_places\":-1" })
+        {
+            var invalid = UsageMappers.Claude(J(ClaudeFixture.Replace("\"monthly_limit\":10000", "\"monthly_limit\":10000," + bad)));
+            var extra = Row(invalid, "Extra Usage");
+            Check(extra.Value == 12.34 && extra.Limit == 100 && extra.CurrencyCode == "USD" && extra.CurrencyDecimalPlaces == 2 && invalid.Metrics.Count == claude.Metrics.Count, "Invalid currency metadata must fall back to USD/2 without breaking other metrics: " + bad);
+        }
+        var lowerUsd = UsageMappers.Claude(J(ClaudeFixture.Replace("\"monthly_limit\":10000", "\"monthly_limit\":10000,\"currency\":\"usd\"")));
+        Check(Row(lowerUsd, "Extra Usage").CurrencyCode == "USD" && Row(lowerUsd, "Extra Usage").CurrencyDecimalPlaces == 2, "Lowercase USD normalizes to USD with two decimals");
         var codex = UsageMappers.Codex(J(CodexFixture));
         Check(codex.Plan == "Pro 100" && Row(codex, "Session").Value == 20 && Row(codex, "Weekly").Value == 80, "Codex windows classified by duration");
         Check(Row(codex, "Extra Usage").Value == 99 && Row(codex, "Extra Usage").Unit == "credits", "Codex credits floor");
@@ -97,15 +109,12 @@ public static class UsageChecks
         Check(Row(UsageMappers.OpenCode(placeholder, DateTimeOffset.Parse("2026-10-29T00:00:00Z")), "Session").ResetsAt is null, "OpenCode unstarted rolling reset");
         var router = UsageMappers.OpenRouter(J("""{"data":{"total_credits":100,"total_usage":25}}"""), J("""{"data":{"usage_daily":2,"usage_weekly":8,"usage_monthly":25}}"""));
         Check(Row(router, "Balance").Value == 75 && Row(router, "Today").Unit == "usd", "OpenRouter provider dollars");
-        var zai = UsageMappers.Zai(J(ZaiFixture));
-        Check(zai.Metrics.Select(m => m.Label).SequenceEqual(new[] { "Session", "Weekly", "Web Searches" }) && Row(zai, "Web Searches").Value == 5 && Row(zai, "Web Searches").Limit == 100, "Zai order, window units, searches");
-        foreach (var map in new Func<JsonNode, UsageSnapshot>[] { n => UsageMappers.Claude(n), n => UsageMappers.Codex(n), n => UsageMappers.Copilot(n), n => UsageMappers.Ollama(n), n => UsageMappers.OpenCode(n), n => UsageMappers.Zai(n), n => UsageMappers.Grok(n), n => UsageMappers.Cursor(n) })
+        foreach (var map in new Func<JsonNode, UsageSnapshot>[] { n => UsageMappers.Claude(n), n => UsageMappers.Codex(n), n => UsageMappers.Copilot(n), n => UsageMappers.Ollama(n), n => UsageMappers.OpenCode(n), n => UsageMappers.Grok(n), n => UsageMappers.Cursor(n) })
             Reject(() => map(J("[]")), "non-object provider response");
         Reject(() => UsageMappers.Grok(J(GrokFixture.Replace("45", "\"NaN\""))), "Grok nonnumeric percentage");
         Reject(() => UsageMappers.Grok(J(GrokFixture.Replace("45", "null"))), "Grok explicit null is not an omitted proto-JSON zero");
         Reject(() => UsageMappers.Grok(J(GrokFixture.Replace("\"100\"", "null"))), "Grok explicit null cap");
         Reject(() => UsageMappers.OpenCode(J("""{"usage":{"rolling":{"percent":20}}}""")), "OpenCode incomplete windows");
-        Reject(() => UsageMappers.Zai(J("""{"limits":[{"type":"TOKENS_LIMIT","unit":3,"number":5}]}""")), "Zai missing percent");
         Reject(() => UsageMappers.Antigravity([J("{}")]), "Antigravity no recognized quotas");
         FetchChecks().GetAwaiter().GetResult();
     }
@@ -123,8 +132,7 @@ public static class UsageChecks
             ["/api/balance"] = OllamaFixture,
             ["/zen/go/v1/usage"] = OpenCodeFixture,
             ["/api/v1/credits"] = """{"data":{"total_credits":100,"total_usage":25}}""",
-            ["/api/v1/key"] = """{"data":{"usage_daily":2}}""",
-            ["/api/monitor/usage/quota/limit"] = ZaiFixture
+            ["/api/v1/key"] = """{"data":{"usage_daily":2}}"""
         };
         string? copilotAuth = null, claudeAgent = null, codexAccount = null;
         var counts = new Dictionary<string, int>();

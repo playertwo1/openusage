@@ -61,6 +61,7 @@ try
     if (args.Length == 2 && args[0] == "--window") { UiChecks.WindowSmoke(directory, args[1]); return; }
     LoginChecks.Run();
     UsageChecks.Run();
+    QuotaPriorityChecks.Run(Path.Combine(directory, "quota"));
     var uiDirectory = Path.Combine(directory, "ui");
     Directory.CreateDirectory(uiDirectory);
     UiChecks.Run(uiDirectory, args.Length == 2 && args[0] == "--render" ? args[1] : null);

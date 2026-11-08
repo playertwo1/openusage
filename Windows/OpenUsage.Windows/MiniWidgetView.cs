@@ -8,7 +8,11 @@ namespace OpenUsage.Windows;
 // One account of the mini widget: its Session and Weekly windows exactly as the provider reports them.
 public sealed record MiniRow(Account Account, string Short, Metric? Session, Metric? Weekly, WeeklyPace? Pace)
 {
-    public string Alert => (Session?.Percent >= 85 || Weekly?.Percent >= 85) ? "Danger" : Pace?.RunsOut == true ? "Warning" : "";
+    public string Alert(DisplayPreferences display)
+    {
+        var levels = new[] { Session, Weekly }.OfType<Metric>().Select(m => MetricPresentation.Severity(m, display)).ToArray();
+        return levels.Contains(QuotaSeverity.Critical) ? "Danger" : levels.Contains(QuotaSeverity.Warning) || Pace?.RunsOut == true ? "Warning" : "";
+    }
 
     public static List<MiniRow> Build(AccountStore store, IReadOnlyDictionary<Guid, AccountStatus> statuses)
     {

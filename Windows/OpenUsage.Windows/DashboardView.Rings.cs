@@ -18,7 +18,9 @@ public sealed partial class DashboardView
         {
             var status = statuses.GetValueOrDefault(account.Id);
             if (display.FavoritesOnly && status?.Snapshot is UsageSnapshot snap && !snap.Metrics.Any(m => store.IsPinned(account, m) && !store.IsHidden(account, m))) continue;
-            rows.Add(ListItem(account, status));
+            var priority = display.PriorityOnly ? QuotaPriority.Strongest(store, account, status, DateTimeOffset.UtcNow) : null;
+            if (display.PriorityOnly && priority is null) continue;
+            rows.Add(ListItem(account, status, priority));
         }
         if (rows.Count == 0) { Empty(store.State.Accounts.Count == 0); return; }
         var list = new C.StackPanel();
@@ -38,7 +40,7 @@ public sealed partial class DashboardView
         dot.SetResourceReference(S.Shape.StrokeProperty, tone); panel.Children.Add(dot); panel.Children.Add(Text(text, 10, "Muted")); return panel;
     }
 
-    private W.UIElement ListItem(Account account, AccountStatus? status)
+    private W.UIElement ListItem(Account account, AccountStatus? status, (Metric Metric, PriorityReason Reason)? priority)
     {
         var snapshot = status?.Snapshot; var session = MetricPresentation.Window(snapshot?.Metrics, false, m => !store.IsHidden(account, m)); var weekly = MetricPresentation.Window(snapshot?.Metrics, true, m => !store.IsHidden(account, m));
         var pace = weekly is null ? null : WeeklyPace.From(weekly, store.State.History.GetValueOrDefault(account.Id) ?? [], DateTimeOffset.UtcNow);
@@ -51,7 +53,9 @@ public sealed partial class DashboardView
         var names = new C.StackPanel();
         names.Children.Add(Text(account.Kind.Name(), 15, "Foreground", true));
         var label = Text(shown, 12, "Muted"); label.TextWrapping = W.TextWrapping.Wrap; label.TextTrimming = W.TextTrimming.None;
-        names.Children.Add(label); Put(title, names, 1); row.Children.Add(title);
+        names.Children.Add(label);
+        if (priority is { } urgent) names.Children.Add(Text($"{QuotaPriority.Describe(urgent.Reason)} · {urgent.Metric.Label} {MetricPresentation.Value(urgent.Metric, display)}", 11, urgent.Reason is PriorityReason.Critical ? "Danger" : "Warning"));
+        Put(title, names, 1); row.Children.Add(title);
         var chevron = PresentationTheme.Icon(open ? "Up" : "Down", 16); Put(row, chevron, 1);
         var head = new C.Border { Child = row, Focusable = true, Cursor = W.Input.Cursors.Hand, ContextMenu = RowMenu(account) };
         A.AutomationProperties.SetName(head, $"{account.Kind.Name()} {shown}");
@@ -95,11 +99,16 @@ public sealed partial class DashboardView
         return line;
     }
 
-    // Number colour is the only alert: red from 85% used, amber when the weekly projection passes 100%.
+    // Red at Critical and amber at Warning or when the weekly projection passes 100%; the same severity rule drives every surface.
     private W.UIElement Cell(Metric? metric, WeeklyPace? pace)
     {
         if (metric is null || MetricPresentation.Fill(metric, display) is not double fill) { var none = Text("-", 12, "Muted"); none.HorizontalAlignment = W.HorizontalAlignment.Center; return none; }
-        var used = metric.Percent ?? 0; var alert = used >= 85 ? "Danger" : pace?.RunsOut == true ? "Warning" : null;
+        var alert = MetricPresentation.Severity(metric, display) switch
+        {
+            QuotaSeverity.Critical => "Danger",
+            QuotaSeverity.Warning => "Warning",
+            _ => pace?.RunsOut == true ? "Warning" : null,
+        };
         var cell = new C.StackPanel { VerticalAlignment = W.VerticalAlignment.Center };
         var line = new C.StackPanel { Orientation = C.Orientation.Horizontal };
         if (alert is not null) { var dot = new S.Ellipse { Width = 5, Height = 5, Margin = new W.Thickness(0, 0, 4, 0) }; dot.SetResourceReference(S.Shape.FillProperty, alert); line.Children.Add(dot); }

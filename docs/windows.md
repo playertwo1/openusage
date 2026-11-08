@@ -38,7 +38,7 @@ in that panel to show its weekly pace chart in place; click again to close it. O
 expanded at a time. Accounts without a weekly reset time show an explanation instead of a chart.
 
 Use **Add Account** to sign in. Claude, ChatGPT, Cursor, Antigravity, Copilot and Grok use browser or
-device-code sign-in. Ollama, OpenCode, OpenRouter and Z.ai use API keys. OpenRouter balance requires
+device-code sign-in. Ollama, OpenCode and OpenRouter use API keys. OpenRouter balance requires
 a Management key. Multiple accounts per provider are supported.
 
 OAuth tokens are renewed automatically when due. Cursor renews seven days early, matching Swift,
@@ -53,7 +53,14 @@ The Windows tray has an icon and a short hover summary rather than the macOS tex
 
 ## Visualization
 
-**Overview** has quick switches for **Used / Remaining** and **All / Favorites**. Remaining values are calculated only for provider-reported percentages or bounded limits; balances and other unbounded values retain their reported meaning.
+**Overview** has quick switches for **Used / Remaining**, **All / Favorites** and **Priority**. Remaining values are calculated only for provider-reported percentages or bounded limits; balances and other unbounded values retain their reported meaning. Claude Extra Usage uses the account's billing currency and the minor-unit precision Claude reports; a missing or invalid value falls back to USD with two decimals. Amounts are never converted between currencies.
+
+**Severity levels** mark a metric by the share of its limit left. Warning starts at 30% left and Critical at 10% left by default; Settings can move Warning from 20% to 70% and Critical from 5% to 25%, always at least five points apart. Overview, Accounts and the tray use the same levels, whether values show as used or remaining.
+
+**Priority** shows only accounts that need attention, in their saved order. An account qualifies when a visible metric is at Warning or Critical, when a weekly window is **Burning Fast**, or when a window is **Use It or Lose It**. Its row names the most urgent reason. Priority and Favorites both apply when both are on.
+
+- **Burning Fast** needs a fresh snapshot (within five minutes), a weekly window the provider names, at least 5% used, at least 1.68 hours of the week elapsed, and a projected run-out before the reset.
+- **Use It or Lose It** needs a provider-reported percentage on a window longer than 24 hours, resetting within 24 hours, with more than 50% left. Sessions, daily or unnamed windows, balances and dollar caps never qualify.
 
 **Accounts** groups accounts by provider. Each account is one list with a row per metric: favorite star, name, bar, value, reset and a Show switch. Right-click a row for move and hide actions.
 
@@ -77,7 +84,10 @@ Closing the window leaves the tray icon running. Click it or press **Ctrl+Alt+U*
 The header's **Close Window** (X) button also hides only the panel. The executable, taskbar and
 desktop shortcut use the embedded OpenUsage icon. Use **Exit OpenUsage** to end the process.
 Right-click the icon and choose **Exit** to quit. If the shortcut is in use by another app, use the
-tray icon. **Settings** can enable startup at Windows sign-in and alerts below 10% remaining.
+tray icon. **Settings** can enable startup at Windows sign-in and alerts. Critical alerts (below the Critical
+level, 10% left by default) keep the saved setting from earlier versions. Warning and Use It or Lose It alerts are off by default.
+Each alert fires once per metric and reset cycle, and a new reset time starts a new cycle. The first
+refresh after launch records an existing Use It or Lose It window without notifying.
 
 Metadata, preferences and credentials are encrypted together with Windows DPAPI for the current
 Windows user, under `%LOCALAPPDATA%\OpenUsage.Windows\accounts.dat`. Removing an account deletes its
@@ -89,7 +99,7 @@ messages. No telemetry is sent by this Windows implementation.
 ## Verification And Current Limits
 
 Regression checks cover protected storage, ordering, OAuth grants/callbacks and fixture-based mapping
-for all ten providers without real accounts. Real sign-in and quotas require manual verification
+for all nine providers without real accounts. Real sign-in and quotas require manual verification
 with accounts the user adds. OAuth providers may restrict client or operating-system behavior.
 
 This first Windows implementation covers sign-in, consumption, tray favorites and basic settings.

@@ -27,6 +27,10 @@ public sealed partial class ShellView
             value => EditDisplay(display => display.Usage = value)));
         Row(displayGroup, "Reset Times", null, Choice("Reset Times", Enum.GetValues<ResetDisplay>(), store.State.Display.Reset,
             value => EditDisplay(display => display.Reset = value), value => value == ResetDisplay.Countdown ? "Countdown" : "Date & Time"));
+        Row(displayGroup, "Warning At", "Amber once this much is left", Choice("Warning At", Enumerable.Range(4, 11).Select(i => i * 5), store.State.Display.PriorityWarningLeft,
+            value => { EditDisplay(display => display.SetPriorityWarningLeft(value)); RefreshPreferences(); }, value => $"{value}% left"));
+        Row(displayGroup, "Critical At", "Red once this little is left", Choice("Critical At", Enumerable.Range(1, 5).Select(i => i * 5), store.State.Display.PriorityCriticalLeft,
+            value => { EditDisplay(display => display.SetPriorityCriticalLeft(value)); RefreshPreferences(); }, value => $"{value}% left"));
         Row(displayGroup, "Favorites Only", "Show only starred metrics in Overview", Toggle("Favorites Only", store.State.Display.FavoritesOnly,
             value => EditDisplay(display => display.FavoritesOnly = value)));
         Row(displayGroup, "Hide Account Names", "Keep your account labels private", Toggle("Hide Account Names", store.State.Display.HideAccountNames,
@@ -43,16 +47,22 @@ public sealed partial class ShellView
                 Navigate("Settings");
             }
         }));
-        Row(general, "Low Usage Alerts", "Notify when less than 10% remains", Toggle("Low Usage Alerts", store.State.Notifications, value =>
+        void SaveAlert(Action<AppState> change)
         {
-            try { store.Edit(state => state.Notifications = value); }
+            try { store.Edit(change); }
             catch (Exception error)
             {
                 AppLog.Error("Notifications", error);
                 System.Windows.MessageBox.Show(AppLog.Friendly(error), "OpenUsage", MessageBoxButton.OK, MessageBoxImage.Error);
                 Navigate("Settings");
             }
-        }));
+        }
+        Row(general, "Critical Alerts", $"Notify when less than {store.State.Display.PriorityCriticalLeft}% remains", Toggle("Critical Alerts", store.State.Notifications,
+            value => SaveAlert(state => state.Notifications = value)));
+        Row(general, "Warning Alerts", $"Notify when less than {store.State.Display.PriorityWarningLeft}% remains", Toggle("Warning Alerts", store.State.WarningNotifications,
+            value => SaveAlert(state => state.WarningNotifications = value)));
+        Row(general, "Use It Or Lose It Alerts", "Notify when a mostly unused window resets within a day", Toggle("Use It Or Lose It Alerts", store.State.UseItOrLoseItNotifications,
+            value => SaveAlert(state => state.UseItOrLoseItNotifications = value)));
         var shortcut = new StackPanel { Orientation = WpfOrientation.Horizontal };
         foreach (var key in new[] { "Ctrl", "Alt", "U" })
         {

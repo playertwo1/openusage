@@ -4,10 +4,10 @@ namespace OpenUsage.Windows;
 
 public static partial class UsageMappers
 {
-    private static readonly (string Id, string Label)[] AntigravityBuckets =
+    private static readonly (string Id, string Label, double Hours)[] AntigravityBuckets =
     [
-        ("gemini-5h", "Gemini 5h"), ("gemini-weekly", "Gemini"),
-        ("3p-5h", "Claude 5h"), ("3p-weekly", "Claude Weekly")
+        ("gemini-5h", "Gemini 5h", 5), ("gemini-weekly", "Gemini", 168),
+        ("3p-5h", "Claude 5h", 5), ("3p-weekly", "Claude Weekly", 168)
     ];
 
     private static IEnumerable<JsonNode> Groups(JsonNode body) => Items(F(F(body, "response"), "groups") ?? F(body, "groups"));
@@ -31,10 +31,10 @@ public static partial class UsageMappers
             pooled[id] = bucket;
         }
         var rows = new List<Metric>();
-        foreach (var (id, label) in AntigravityBuckets)
+        foreach (var (id, label, hours) in AntigravityBuckets)
         {
             if (!pooled.TryGetValue(id, out var bucket)) continue;
-            rows.Add(AntigravityPercent(label, bucket));
+            rows.Add(AntigravityPercent(label, bucket, hours));
         }
         foreach (var groupList in summaries.Select(s => Groups(s).ToArray()))
         {
@@ -47,7 +47,7 @@ public static partial class UsageMappers
             if (string.IsNullOrEmpty(id) || AntigravityBuckets.Any(spec => spec.Id == id) ||
                 (disabled is not null && disabled.Bool() is null) || disabled.Bool() == true || F(bucket, "remainingFraction").Number() is null) continue;
             var index = rows.FindIndex(r => r.Label is "Claude 5h" or "Claude Weekly");
-            rows.Insert(index < 0 ? rows.Count : index, AntigravityPercent("Argon", bucket));
+            rows.Insert(index < 0 ? rows.Count : index, AntigravityPercent("Argon", bucket, WeeklyHours));
             break;
         }
         var paid = F(assist, "paidTier");
@@ -63,9 +63,11 @@ public static partial class UsageMappers
         return Result(plan, rows);
     }
 
-    private static Metric AntigravityPercent(string label, JsonNode bucket)
+    private const double WeeklyHours = 168;
+
+    private static Metric AntigravityPercent(string label, JsonNode bucket, double hours)
     {
         var remaining = F(bucket, "remainingFraction").Number() ?? throw Json.Invalid();
-        return Percent(label, Math.Round((1 - Math.Clamp(remaining, 0, 1)) * 100, MidpointRounding.AwayFromZero), F(bucket, "resetTime").Date());
+        return Percent(label, Math.Round((1 - Math.Clamp(remaining, 0, 1)) * 100, MidpointRounding.AwayFromZero), F(bucket, "resetTime").Date(), hours);
     }
 }

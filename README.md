@@ -64,11 +64,14 @@ A compact native desktop app with three ways to stay informed:
 - **Height that follows the content.** The panel grows and shrinks with visible accounts and expanded charts. Scrolling is needed only when content exceeds the monitor's work area.
 - **Weekly pace at a click.** Compare observed usage with an even pace and see the projection for the current week.
 - **Used or remaining.** Change the value convention and filter to starred metrics.
+- **Priority view.** Show only accounts near a limit, burning a weekly window fast, or with a mostly unused window about to reset. Warning and Critical levels are adjustable in Settings.
 - **Your preferred display.** Choose light, AMOLED dark or system appearance, text size, reset format and account-label privacy. Optional soft transparency can be disabled for a solid background.
 
 <p align="center">
   <a href="docs/images/windows/overview.png"><img src="docs/images/windows/overview.png" alt="Current light-theme main panel with separate account headings and session and weekly limits" width="330"></a>
 </p>
+
+Claude Extra Usage shows the account's own billing currency (for example EUR or JPY) at the precision Claude reports, and falls back to USD with two decimals when that metadata is missing or invalid.
 
 Pace projections use provider-reported percentages and reset times. Missing observations stay missing.
 They are usage projections, not dollar or token estimates.
@@ -128,7 +131,7 @@ sharing, macOS CLI export, or action to spend a limit reset. Shortcuts are fixed
 | Sign-In | Providers |
 |---|---|
 | **Browser or device code** | Claude · ChatGPT / Codex · Cursor · Antigravity · GitHub Copilot · Grok |
-| **API key** | Ollama · OpenCode · OpenRouter · Z.ai |
+| **API key** | Ollama · OpenCode · OpenRouter |
 
 OpenRouter's balance requires a **Management key**. Available metrics depend on what the provider
 reports for your plan. [Provider details](docs/providers.md).

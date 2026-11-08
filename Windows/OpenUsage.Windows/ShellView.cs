@@ -31,6 +31,7 @@ public sealed partial class ShellView : WpfUserControl
     private readonly Dictionary<string, WpfButton> navigation = [];
     private readonly Dictionary<UsageDisplay, WpfButton> usageButtons = [];
     private readonly Dictionary<bool, WpfButton> filterButtons = [];
+    private WpfButton priorityButton = null!;
     private readonly StackPanel quickControls = new() { Orientation = WpfOrientation.Horizontal };
     private Grid? overviewPage;
     private IReadOnlyDictionary<Guid, AccountStatus> statuses = new Dictionary<Guid, AccountStatus>();
@@ -165,6 +166,10 @@ public sealed partial class ShellView : WpfUserControl
             button.Padding = new Thickness(9, 5, 9, 5);
             filterButtons.Add(favorite, button); filters.Children.Add(button);
         }
+        priorityButton = Button("Priority", "SegmentButton", () => EditDisplay(display => display.PriorityOnly = !display.PriorityOnly));
+        priorityButton.FontSize = 11;
+        priorityButton.Padding = new Thickness(9, 5, 9, 5);
+        filters.Children.Add(priorityButton);
         Grid.SetColumn(filters, 1); row.Children.Add(filters);
         UpdateQuickSelection();
         return row;
@@ -183,6 +188,12 @@ public sealed partial class ShellView : WpfUserControl
             var selected = favorite == store.State.Display.FavoritesOnly;
             button.Tag = selected ? "selected" : null;
             AutomationProperties.SetItemStatus(button, selected ? "Selected" : "");
+        }
+        if (priorityButton is not null)
+        {
+            var selected = store.State.Display.PriorityOnly;
+            priorityButton.Tag = selected ? "selected" : null;
+            AutomationProperties.SetItemStatus(priorityButton, selected ? "Selected" : "");
         }
     }
 

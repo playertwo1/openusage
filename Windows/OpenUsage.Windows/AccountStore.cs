@@ -11,7 +11,10 @@ public sealed class AppState
     public HashSet<string> Hidden { get; set; } = [];
     public Dictionary<Guid, List<string>> MetricOrder { get; set; } = [];
     public Dictionary<Guid, DateTimeOffset> RetryAfter { get; set; } = [];
+    // Notifications is the Critical alert; the two below are opt-in.
     public bool Notifications { get; set; }
+    public bool WarningNotifications { get; set; }
+    public bool UseItOrLoseItNotifications { get; set; }
     public DisplayPreferences Display { get; set; } = new();
     public Dictionary<Guid, List<WeekSample>> History { get; set; } = [];
 }
@@ -35,10 +38,28 @@ public sealed class AccountStore
         try
         {
             var state = JsonSerializer.Deserialize<AppState>(plain) ?? throw new InvalidDataException("The Account File Is Empty.");
+            DropRemovedProviders(state);
             Validate(state);
             return state;
         }
         finally { CryptographicOperations.ZeroMemory(plain); }
+    }
+
+    // A provider removed from the app leaves its saved accounts behind; drop only those, with their settings, and keep the rest of the file.
+    private static void DropRemovedProviders(AppState state)
+    {
+        if (state.Accounts is null) return;
+        foreach (var gone in state.Accounts.Where(a => !Enum.IsDefined(a.Kind)).Select(a => a.Id).ToList())
+        {
+            AppLog.Error("RemovedProviderAccount", new InvalidDataException("This provider is no longer supported."), gone);
+            var prefix = $"{gone:N}/";
+            state.Accounts.RemoveAll(a => a.Id == gone);
+            state.Pins?.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal)).ToList().ForEach(k => state.Pins.Remove(k));
+            state.Hidden?.RemoveWhere(k => k.StartsWith(prefix, StringComparison.Ordinal));
+            state.MetricOrder?.Remove(gone);
+            state.RetryAfter?.Remove(gone);
+            state.History?.Remove(gone);
+        }
     }
 
     private static void Validate(AppState state)

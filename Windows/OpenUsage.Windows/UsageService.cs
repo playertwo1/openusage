@@ -37,8 +37,6 @@ public sealed class UsageService(Api api)
                 await Hourly(kind, token, "plan", () => api.SendAsync(HttpMethod.Post, "https://ollama.com/api/me", token, ct: ct), ct)),
             ProviderKind.OpenCode => UsageMappers.OpenCode(await api.GetAsync("https://opencode.ai/zen/go/v1/usage", token, ct: ct)),
             ProviderKind.OpenRouter => await OpenRouter(token, ct),
-            ProviderKind.Zai => UsageMappers.Zai(await api.GetAsync("https://api.z.ai/api/monitor/usage/quota/limit", token, ct: ct),
-                await Hourly(kind, token, "plan", () => api.GetAsync("https://api.z.ai/api/biz/subscription/list", token, ct: ct), ct)),
             _ => throw new ProviderException("This Provider Is Not Supported.")
         };
     }
