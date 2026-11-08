@@ -37,8 +37,6 @@ public sealed class UsageService(Api api)
                 await Hourly(kind, token, "plan", () => api.SendAsync(HttpMethod.Post, "https://ollama.com/api/me", token, ct: ct), ct)),
             ProviderKind.OpenCode => UsageMappers.OpenCode(await api.GetAsync("https://opencode.ai/zen/go/v1/usage", token, ct: ct)),
             ProviderKind.OpenRouter => await OpenRouter(token, ct),
-            ProviderKind.Zai => UsageMappers.Zai(await api.GetAsync("https://api.z.ai/api/monitor/usage/quota/limit", token, ct: ct),
-                await Hourly(kind, token, "plan", () => api.GetAsync("https://api.z.ai/api/biz/subscription/list", token, ct: ct), ct)),
             _ => throw new ProviderException("This Provider Is Not Supported.")
         };
     }
@@ -174,6 +172,7 @@ public sealed class UsageService(Api api)
         }, ct);
         var bodies = new List<JsonNode>();
         Exception? error = null;
+        var requested = DateTimeOffset.UtcNow;
         foreach (var host in bases)
         {
             try
@@ -181,13 +180,14 @@ public sealed class UsageService(Api api)
                 object body = (assist as JsonObject)?["cloudaicompanionProject"].Text() is { Length: > 0 } project ? new { project } : new { };
                 var summary = await api.SendAsync(HttpMethod.Post, host + "/v1internal:retrieveUserQuotaSummary", token, body, headers, ct);
                 bodies.Add(summary);
-                if (UsageMappers.CompleteAntigravity(summary)) break;
+                // The daily host is also read when the primary one reports a window that has not started.
+                if (UsageMappers.CompleteAntigravity(summary) && !UsageMappers.AntigravityNeedsFallback(summary, requested)) break;
             }
             catch (Exception ex) when (!ct.IsCancellationRequested && ex is ProviderException or HttpRequestException or TaskCanceledException)
             { if (error is not ProviderException { StatusCode: 401 or 403 }) error = ex; }
         }
         if (bodies.Count == 0) throw error ?? Json.Invalid();
-        return UsageMappers.Antigravity(bodies, assist);
+        return UsageMappers.Antigravity(bodies, assist, requested);
     }
 
     private static string CacheKey(ProviderKind kind, string token, string name) => kind + ":" + name + ":" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));

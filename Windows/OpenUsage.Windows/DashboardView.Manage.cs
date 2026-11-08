@@ -75,7 +75,12 @@ public sealed partial class DashboardView
             var inner = new C.Border { CornerRadius = new W.CornerRadius(2), HorizontalAlignment = W.HorizontalAlignment.Left }; inner.SetResourceReference(C.Border.BackgroundProperty, MetricPresentation.BaseTone(metric.Label)); bar.Children.Add(inner);
             bar.SizeChanged += (_, e) => inner.Width = e.NewSize.Width * Math.Clamp(fill, 0, 100) / 100;
             A.AutomationProperties.SetName(bar, $"{metric.Label}: {fill:0}% {(display.Usage == UsageDisplay.Used ? "used" : "left")}"); Put(row, bar, 2);
-            var alert = metric.Percent >= 85 ? "Danger" : pace?.RunsOut == true ? "Warning" : "Foreground";
+            var alert = MetricPresentation.Severity(metric, display) switch
+            {
+                QuotaSeverity.Critical => "Danger",
+                QuotaSeverity.Warning => "Warning",
+                _ => pace?.RunsOut == true ? "Warning" : "Foreground",
+            };
             var value = Text($"{fill:0}%", 12, alert, true); value.HorizontalAlignment = W.HorizontalAlignment.Right; Put(row, value, 3);
         }
         else

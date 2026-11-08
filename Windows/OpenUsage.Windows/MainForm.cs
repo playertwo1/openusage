@@ -7,7 +7,7 @@ public sealed class MainForm : Form
     private readonly UsageService usage;
     private readonly ProviderLogin login;
     private readonly Dictionary<Guid, AccountStatus> statuses = [];
-    private readonly Dictionary<string, bool> notified = [];
+    private readonly UsageAlertEvaluator alerts = new();
     private readonly Dictionary<Guid, CancellationTokenSource> activeRequests = [];
     private readonly ShellView shell;
     private DashboardView dashboard => shell.Dashboard;
@@ -264,13 +264,15 @@ public sealed class MainForm : Form
     }
     private void Notify(Account account, UsageSnapshot snapshot)
     {
-        foreach (var metric in snapshot.Metrics)
+        foreach (var alert in alerts.Evaluate(store, account, snapshot, DateTimeOffset.UtcNow))
         {
-            var key = AccountStore.MetricKey(account.Id, metric.Label);
-            var low = metric.Percent >= 90;
-            if (store.State.Notifications && !store.IsHidden(account, metric) && low && !notified.GetValueOrDefault(key))
-                tray.ShowBalloonTip(8000, $"{account.Kind.Name()} · {MetricPresentation.AccountName(account, store.State.Accounts, store.State.Display.HideAccountNames)}", $"{metric.Label}: {MetricPresentation.Value(metric, store.State.Display)}", ToolTipIcon.Warning);
-            notified[key] = low;
+            var (note, icon) = alert.Kind switch
+            {
+                AlertKind.Critical => ("", ToolTipIcon.Warning),
+                AlertKind.Warning => (" · Running low", ToolTipIcon.Info),
+                _ => (" · Resets soon, mostly unused", ToolTipIcon.Info),
+            };
+            tray.ShowBalloonTip(8000, $"{account.Kind.Name()} · {MetricPresentation.AccountName(account, store.State.Accounts, store.State.Display.HideAccountNames)}", $"{alert.Metric.Label}: {MetricPresentation.Value(alert.Metric, store.State.Display)}{note}", icon);
         }
     }
     private void Render()

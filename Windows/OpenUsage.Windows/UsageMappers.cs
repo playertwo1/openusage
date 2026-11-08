@@ -13,7 +13,7 @@ public static partial class UsageMappers
         "true" or "1" => true, "false" or "0" => false, _ => node.Number() is double n ? n != 0 : null
     };
     private static double Clamp(double value) => Math.Clamp(value, 0, 100);
-    private static Metric Percent(string label, double value, DateTimeOffset? reset = null) => new(label, Clamp(value), ResetsAt: reset);
+    private static Metric Percent(string label, double value, DateTimeOffset? reset = null, double? hours = null) => new(label, Clamp(value), ResetsAt: reset, WindowHours: hours);
     private static string? Title(string? text) => string.IsNullOrWhiteSpace(text) ? null : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(text.Trim().Replace('_', ' ').Replace('-', ' ').ToLowerInvariant());
     private static DateTimeOffset? Milliseconds(JsonNode? node) => node.Number() is double value ? Epoch(value / 1000) : node.Date();
     private static DateTimeOffset? Epoch(double value)
@@ -32,17 +32,19 @@ public static partial class UsageMappers
     {
         Object(body);
         var rows = new List<Metric>();
-        foreach (var (key, label) in new[] { ("five_hour", "Session"), ("seven_day", "Weekly"), ("seven_day_sonnet", "Sonnet") })
+        foreach (var (key, label, hours) in new[] { ("five_hour", "Session", 5d), ("seven_day", "Weekly", 168d), ("seven_day_sonnet", "Sonnet", 168d) })
             if (F(F(body, key), "utilization").Number() is double value)
-                rows.Add(Percent(label, value, FlexibleDate(F(F(body, key), "resets_at"))));
+                rows.Add(Percent(label, value, FlexibleDate(F(F(body, key), "resets_at")), hours));
         var fable = Items(F(body, "limits")).FirstOrDefault(entry => F(entry, "kind").Text() == "weekly_scoped" &&
             F(F(F(entry, "scope"), "model"), "display_name").Text() == "Fable");
-        if (F(fable, "percent").Number() is double fableUsed) rows.Add(Percent("Fable", fableUsed, FlexibleDate(F(fable, "resets_at"))));
+        if (F(fable, "percent").Number() is double fableUsed) rows.Add(Percent("Fable", fableUsed, FlexibleDate(F(fable, "resets_at")), 168));
         var extra = F(body, "extra_usage");
         if (F(extra, "is_enabled").Bool() == true && F(extra, "used_credits").Number() is double cents)
         {
             var limit = F(extra, "monthly_limit").Number();
-            if (limit > 0 || cents > 0) rows.Add(new("Extra Usage", Math.Max(0, cents / 100), limit > 0 ? limit / 100 : null, "usd"));
+            var (code, places) = BillingCurrency(extra);
+            var minorUnit = Math.Pow(10, places);
+            if (limit > 0 || cents > 0) rows.Add(new("Extra Usage", Math.Max(0, cents / minorUnit), limit > 0 ? limit / minorUnit : null, "usd", CurrencyCode: code, CurrencyDecimalPlaces: places));
         }
         var reset = F(grants, "cedar_ember");
         if (reset is JsonObject)
@@ -68,6 +70,15 @@ public static partial class UsageMappers
             if (match.Success) plan += " " + match.Value;
         }
         return Result(plan, rows);
+    }
+
+    // Each field falls back on its own: a bad code keeps a valid precision, and the reverse.
+    private static (string Code, int Places) BillingCurrency(JsonNode? extra)
+    {
+        var code = F(extra, "currency").Text()?.Trim().ToUpperInvariant();
+        var places = F(extra, "decimal_places").Number();
+        return (code is { Length: 3 } && code.All(c => c is >= 'A' and <= 'Z') ? code : "USD",
+            places is double p && p is >= 0 and <= 6 && p == Math.Floor(p) ? (int)p : 2);
     }
 
     public static UsageSnapshot Codex(JsonNode body, DateTimeOffset? now = null)
@@ -108,7 +119,7 @@ public static partial class UsageMappers
             {
                 try { reset = now.AddSeconds(after); } catch (ArgumentOutOfRangeException) { }
             }
-            rows.Add(Percent(labels[i], value, reset));
+            rows.Add(Percent(labels[i], value, reset, exact is null ? null : periods[i] / 3600));
         }
     }
 
@@ -149,9 +160,9 @@ public static partial class UsageMappers
         Object(body);
         if (F(body, "included") is not JsonObject included) throw Json.Invalid();
         var rows = new List<Metric>();
-        foreach (var (key, label) in new[] { ("session", "Session"), ("weekly", "Weekly") })
+        foreach (var (key, label, hours) in new[] { ("session", "Session", 5d), ("weekly", "Weekly", 168d) })
             if (F(F(included, key), "remaining_percent").Number() is double remaining)
-                rows.Add(Percent(label, 100 - remaining, F(F(included, key), "resets_at").Date()));
+                rows.Add(Percent(label, 100 - remaining, F(F(included, key), "resets_at").Date(), hours));
         if (F(included, "allowance_usd").Number() is double allowance && allowance > 0 && F(included, "balance_usd").Number() is double balance)
             rows.Add(new("Monthly", Math.Min(allowance, Math.Max(0, allowance - balance)), allowance, "usd", F(F(included, "period"), "until").Date()));
         if (rows.Count == 0) throw Json.Invalid();
@@ -163,13 +174,13 @@ public static partial class UsageMappers
     {
         Object(body);
         var rows = new List<Metric>();
-        foreach (var (key, label) in new[] { ("rolling", "Session"), ("weekly", "Weekly"), ("monthly", "Monthly") })
+        foreach (var (key, label, hours) in new[] { ("rolling", "Session", 5d), ("weekly", "Weekly", 168d), ("monthly", "Monthly", 720d) })
         {
             var window = F(F(body, "usage"), key);
             if (F(window, "percent").Number() is not double percent || F(window, "resetsAt").Date() is not { } reset) throw Json.Invalid();
             DateTimeOffset? resetAt = reset;
             if (key == "rolling" && Clamp(percent) == 0 && Math.Abs((reset - (now ?? DateTimeOffset.UtcNow)).TotalSeconds - 18000) <= 2) resetAt = null;
-            rows.Add(Percent(label, percent, resetAt));
+            rows.Add(Percent(label, percent, resetAt, hours));
         }
         return new("Go", rows);
     }
@@ -185,35 +196,6 @@ public static partial class UsageMappers
             if (F(keyData, field).Number() is double value) rows.Add(new(label, Math.Max(0, value), Unit: "usd"));
         var free = F(keyData, "is_free_tier").Bool();
         return Result(free.HasValue ? free.Value ? "Free" : "Pay-as-you-go" : null, rows);
-    }
-
-    public static UsageSnapshot Zai(JsonNode body, JsonNode? subscription = null)
-    {
-        Object(body);
-        var container = F(body, "data") ?? body;
-        if (F(container, "limits") is not JsonArray limits) throw Json.Invalid();
-        var rows = new List<Metric>();
-        foreach (var entry in Items(limits))
-        {
-            var type = F(entry, "type").Text() ?? F(entry, "name").Text();
-            if (type is not "TOKENS_LIMIT" and not "CREDIT_LIMIT") continue;
-            if (F(entry, "unit").Number() is not double unit || F(entry, "number").Number() is not double number || number <= 0) throw Json.Invalid();
-            var unitHours = unit switch { 3 => 1d, 4 => 24d, 5 => 720d, 6 => 168d, _ => 0 };
-            if (unitHours == 0) continue;
-            var hours = unitHours * number;
-            if (!double.IsFinite(hours) || hours * 3600000 < 1 || hours * 3600000 >= long.MaxValue) throw Json.Invalid();
-            if (F(entry, "percentage").Number() is not double percentage) throw Json.Invalid();
-            rows.Add(Percent(hours < 24 ? "Session" : "Weekly", percentage, Milliseconds(F(entry, "nextResetTime"))));
-        }
-        var web = Items(limits).FirstOrDefault(e => F(e, "type").Text() == "TIME_LIMIT" || F(e, "name").Text() == "TIME_LIMIT");
-        if (web is not null)
-        {
-            if (F(web, "currentValue").Number() is not double used || used < 0 || F(web, "usage").Number() is not double limit || limit < 0) throw Json.Invalid();
-            rows.Add(new("Web Searches", used, limit, "searches", Milliseconds(F(web, "nextResetTime"))));
-        }
-        rows = rows.OrderBy(row => row.Label switch { "Session" => 0, "Weekly" => 1, _ => 2 }).ToList();
-        var first = Items(F(subscription, "data")).FirstOrDefault();
-        return Result(F(first, "productName").Text()?.Trim(), rows, true);
     }
 
     public static UsageSnapshot Grok(JsonNode body, JsonNode? settings = null)
@@ -232,7 +214,7 @@ public static partial class UsageMappers
         var capValue = F(capNode, "val");
         var cap = (capNode as JsonObject)?.ContainsKey("val") != true ? 0 : capValue.Number() ?? throw Json.Invalid();
         var rows = new List<Metric>();
-        if (type == "USAGE_PERIOD_TYPE_WEEKLY") rows.Add(Percent("Weekly", used, end));
+        if (type == "USAGE_PERIOD_TYPE_WEEKLY") rows.Add(Percent("Weekly", used, end, (end.Value - start.Value).TotalHours));
         rows.Add(new("Extra Usage", cap, Unit: "count", Text: cap > 0 ? $"{cap:0.##} Cap" : "Disabled"));
         return new(F(settings, "subscription_tier_display").Text()?.Trim(), rows);
     }

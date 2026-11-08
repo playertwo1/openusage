@@ -77,8 +77,8 @@ public sealed partial class DashboardView : C.UserControl
         var logos = new C.StackPanel { Orientation = C.Orientation.Horizontal, HorizontalAlignment = W.HorizontalAlignment.Center, Margin = new W.Thickness(0, 0, 0, 20) };
         foreach (var kind in new[] { ProviderKind.Claude, ProviderKind.Codex, ProviderKind.Cursor }) { var icon = PresentationTheme.ProviderIcon(kind, 30); icon.Margin = new W.Thickness(10, 0, 10, 0); logos.Children.Add(icon); }
         empty.Children.Add(logos);
-        var title = Text(first ? "Your AI Limits, Together" : "No Favorites To Show", 18, "Foreground", true); title.TextAlignment = W.TextAlignment.Center; empty.Children.Add(title);
-        var detail = Text(first ? "Connect your accounts to see limits, balances and reset times in one quiet place." : "Star a metric or switch back to All to see your usage.", 12, "Muted"); detail.TextWrapping = W.TextWrapping.Wrap; detail.TextAlignment = W.TextAlignment.Center; detail.Margin = new W.Thickness(5, 10, 5, 20); empty.Children.Add(detail);
+        var title = Text(first ? "Your AI Limits, Together" : display.PriorityOnly ? "Nothing Needs Attention" : "No Favorites To Show", 18, "Foreground", true); title.TextAlignment = W.TextAlignment.Center; empty.Children.Add(title);
+        var detail = Text(first ? "Connect your accounts to see limits, balances and reset times in one quiet place." : display.PriorityOnly ? "No account is near a limit, burning fast or about to reset mostly unused." : "Star a metric or switch back to All to see your usage.", 12, "Muted"); detail.TextWrapping = W.TextWrapping.Wrap; detail.TextAlignment = W.TextAlignment.Center; detail.Margin = new W.Thickness(5, 10, 5, 20); empty.Children.Add(detail);
         if (first) { var add = new C.Button { Content = "Add Account", HorizontalAlignment = W.HorizontalAlignment.Center }; add.SetResourceReference(StyleProperty, "PrimaryButton"); add.Click += (_, _) => AddRequested?.Invoke(); empty.Children.Add(add); }
         groups.Children.Add(empty);
     }

@@ -1,7 +1,7 @@
 # Windows Product Tour
 
 
-The Windows edition lives in [`Windows/`](../Windows/) and is independent of the Swift app and the macOS release pipeline. It is a tray app written in C# on .NET 10. The screens are WPF, hosted by the Windows Forms window and tray lifecycle. It supports the same ten providers (Claude, ChatGPT/Codex, Cursor, Antigravity, Copilot, Grok, Ollama, OpenCode, OpenRouter and Z.ai) and follows the same rule as the Mac app: you sign in to each account inside the app, and it never reads credentials or files that belong to other tools.
+The Windows edition lives in [`Windows/`](../Windows/) and is independent of the Swift app and the macOS release pipeline. It is a tray app written in C# on .NET 10. The screens are WPF, hosted by the Windows Forms window and tray lifecycle. It supports nine providers (Claude, ChatGPT/Codex, Cursor, Antigravity, Copilot, Grok, Ollama, OpenCode and OpenRouter) and follows the same rule as the Mac app: you sign in to each account inside the app, and it never reads credentials or files that belong to other tools.
 
 **Download:** the portable `OpenUsage-windows-x64.exe` (69 MB, no installer, runs without installing .NET) is on the [Windows 0.1.1 release](https://github.com/playertwo1/openusage/releases/tag/windows-v0.1.1). To build it yourself, run `./script/windows.ps1 publish` with the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Version history is in [`Windows/CHANGELOG.md`](../Windows/CHANGELOG.md) and details are in [docs/windows.md](windows.md). All screenshots below use made-up demo data, not real accounts.
 
@@ -42,8 +42,8 @@ Accounts are grouped by provider, with the provider menu in the group header. Ea
 Settings is a short list in three groups.
 
 - **Appearance:** theme (System, Light or Dark), text size (100%, 110% or 125%) and optional soft transparency. Transparency affects the whole panel, without desktop blur, and is disabled in high contrast.
-- **Usage Display:** show usage as used or remaining, reset times as a countdown or a date and time, favorites only, and hide account names. Hiding names applies to Overview, the tray, the tray tooltip and notifications. Accounts still shows them so you can manage them.
-- **General:** launch at sign-in, low usage alerts (a notification when a limit passes 90%), the global shortcut Ctrl+Alt+U, and the mini widget options below.
+- **Usage Display:** show usage as used or remaining, the Warning and Critical levels (30% and 10% left by default), reset times as a countdown or a date and time, favorites only, and hide account names. Hiding names applies to Overview, the tray, the tray tooltip and notifications. Accounts still shows them so you can manage them.
+- **General:** launch at sign-in, Critical alerts (a notification when a limit passes the Critical level, 10% left by default), optional Warning and Use It or Lose It alerts, the global shortcut Ctrl+Alt+U, and the mini widget options below.
 
 ### Mini widget
 
@@ -72,7 +72,7 @@ An optional small panel that floats on your desktop. Turn it on from **Settings 
   <img src="images/windows/empty.png" alt="First-run empty state" width="320">
 </p>
 
-**Add Account** opens a provider picker. Claude, ChatGPT, Cursor, Antigravity, Copilot and Grok sign in through your browser or a device code. Ollama, OpenCode, OpenRouter and Z.ai use API keys, and OpenRouter's balance needs a Management key. You can add several accounts per provider. Sign-in tokens are renewed automatically when due, and a failed early renewal keeps a still-valid token and shows an account-specific warning.
+**Add Account** opens a provider picker. Claude, ChatGPT, Cursor, Antigravity, Copilot and Grok sign in through your browser or a device code. Ollama, OpenCode and OpenRouter use API keys, and OpenRouter's balance needs a Management key. You can add several accounts per provider. Sign-in tokens are renewed automatically when due, and a failed early renewal keeps a still-valid token and shows an account-specific warning.
 
 ### How your data is kept
 

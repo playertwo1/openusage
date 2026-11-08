@@ -28,10 +28,36 @@ public sealed class DisplayPreferences
     // Position inside the monitor's work area, 0 to 1 on each axis; negative means the default corner.
     public double MiniX { get; set; } = -1;
     public double MiniY { get; set; } = -1;
+    // Remaining-percent levels: Warning at or below PriorityWarningLeft, Critical at or below PriorityCriticalLeft.
+    public int PriorityWarningLeft { get; set; } = 30;
+    public int PriorityCriticalLeft { get; set; } = 10;
+    public bool PriorityOnly { get; set; }
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsValid => Enum.IsDefined(Theme) && Enum.IsDefined(Density) && Enum.IsDefined(Layout)
-        && Enum.IsDefined(Usage) && Enum.IsDefined(Reset) && TextSize is 100 or 110 or 125;
+        && Enum.IsDefined(Usage) && Enum.IsDefined(Reset) && TextSize is 100 or 110 or 125
+        && ValidThresholds(PriorityWarningLeft, PriorityCriticalLeft);
+
+    public static bool ValidWarning(int value) => value is >= 20 and <= 70 && value % 5 == 0;
+    public static bool ValidCritical(int value) => value is >= 5 and <= 25 && value % 5 == 0;
+    public static bool ValidThresholds(int warning, int critical) => ValidWarning(warning) && ValidCritical(critical) && critical <= warning - 5;
+
+    // Each setter moves the other level only when the two would otherwise meet or cross.
+    public void SetPriorityWarningLeft(int value)
+    {
+        if (!ValidWarning(value)) throw new ArgumentOutOfRangeException(nameof(value), "Warning must be 20 to 70 in steps of 5.");
+        PriorityWarningLeft = value;
+        if (value <= PriorityCriticalLeft) PriorityCriticalLeft = value - 5;
+    }
+
+    public void SetPriorityCriticalLeft(int value)
+    {
+        if (!ValidCritical(value)) throw new ArgumentOutOfRangeException(nameof(value), "Critical must be 5 to 25 in steps of 5.");
+        PriorityCriticalLeft = value;
+        if (value >= PriorityWarningLeft) PriorityWarningLeft = value + 5;
+    }
 }
+
+public enum QuotaSeverity { Normal, Warning, Critical }
 
 public static class MetricPresentation
 {
@@ -57,6 +83,19 @@ public static class MetricPresentation
         return "Account";
     }
 
+    // Severity reads remaining percent whatever the display mode; the 1e-6 rounding keeps exact 30% and 10% boundaries stable.
+    public static QuotaSeverity Severity(Metric metric, DisplayPreferences display)
+    {
+        if (metric.Percent is not double used) return QuotaSeverity.Normal;
+        var left = Math.Round(100 - used, 6);
+        return left <= display.PriorityCriticalLeft ? QuotaSeverity.Critical : left <= display.PriorityWarningLeft ? QuotaSeverity.Warning : QuotaSeverity.Normal;
+    }
+
+    // "Use It or Lose It": provider-reported percent, a known window longer than a day, resetting within 24 hours, over half unused.
+    public static bool IsUnusedNearReset(Metric metric, DateTimeOffset now) =>
+        metric.Unit == "percent" && metric.WindowHours is > 24 && metric.ResetsAt is DateTimeOffset reset && reset > now && reset <= now.AddHours(24)
+        && metric.Percent is double used && 100 - used > 50;
+
     public static double? Fill(Metric metric, DisplayPreferences display) => metric.Percent is double used
         ? display.Usage == UsageDisplay.Remaining ? 100 - used : used : null;
 
@@ -71,7 +110,7 @@ public static class MetricPresentation
         if (display.Usage == UsageDisplay.Remaining && metric.Limit is double limit)
         {
             var remaining = Math.Max(0, limit - metric.Value);
-            return metric.Unit == "usd" ? $"${remaining:0.00} left" : $"{remaining:0.##} {metric.Unit} left";
+            return metric.Unit == "usd" ? $"{metric.FormatAmount(remaining)} left" : $"{remaining:0.##} {metric.Unit} left";
         }
         return metric.Display;
     }

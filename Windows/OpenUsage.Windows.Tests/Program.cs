@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 
 var directory = Path.Combine(Path.GetTempPath(), "OpenUsage-Tests-" + Guid.NewGuid());
 Directory.CreateDirectory(directory);
+AppLog.LogDirectory = directory;
 try
 {
     void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
@@ -61,6 +62,7 @@ try
     if (args.Length == 2 && args[0] == "--window") { UiChecks.WindowSmoke(directory, args[1]); return; }
     LoginChecks.Run();
     UsageChecks.Run();
+    QuotaPriorityChecks.Run(Path.Combine(directory, "quota"));
     var uiDirectory = Path.Combine(directory, "ui");
     Directory.CreateDirectory(uiDirectory);
     UiChecks.Run(uiDirectory, args.Length == 2 && args[0] == "--render" ? args[1] : null);
