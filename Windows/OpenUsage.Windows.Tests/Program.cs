@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 
 var directory = Path.Combine(Path.GetTempPath(), "OpenUsage-Tests-" + Guid.NewGuid());
 Directory.CreateDirectory(directory);
+AppLog.LogDirectory = directory;
 try
 {
     void Check(bool condition, string message) { if (!condition) throw new Exception(message); }

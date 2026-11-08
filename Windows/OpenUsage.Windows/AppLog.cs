@@ -1,15 +1,22 @@
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("OpenUsage.Windows.Tests")]
+
 namespace OpenUsage.Windows;
 
 internal static class AppLog
 {
+    // Tests point this at their own folder so runs never write into the user's real error log.
+    public static string LogDirectory { get; set; } = AccountStore.DataDirectory;
+
     public static void Error(string operation, Exception error, Guid? account = null)
     {
         // Log only classifications; exception messages can contain provider secrets or response data.
         var line = $"{DateTimeOffset.UtcNow:O} {operation} account={account} type={error.GetType().Name} status={(error as ProviderException)?.StatusCode}\n";
         try
         {
-            Directory.CreateDirectory(AccountStore.DataDirectory);
-            var path = Path.Combine(AccountStore.DataDirectory, "errors.log");
+            Directory.CreateDirectory(LogDirectory);
+            var path = Path.Combine(LogDirectory, "errors.log");
             if (File.Exists(path) && new FileInfo(path).Length > 1_000_000) File.Move(path, path + ".previous", true);
             File.AppendAllText(path, line);
         }
