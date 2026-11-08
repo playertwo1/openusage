@@ -93,6 +93,15 @@ public static class UsageChecks
         var ambiguous = J(AntigravityFixture);
         ((JsonArray)ambiguous["groups"]![1]!["buckets"]!).Add(J("""{"bucketId":"argon-2","window":"weekly","remainingFraction":0.1}"""));
         Check(!UsageMappers.Antigravity([ambiguous]).Metrics.Any(m => m.Label == "Argon"), "Ambiguous Argon bucket suppressed");
+        // The primary host reports an unstarted window as "resets one window from now" with full quota; the daily host has the real window.
+        var requested = new DateTimeOffset(2026, 11, 8, 11, 0, 0, TimeSpan.Zero);
+        var unstarted = J("""{"groups":[{"displayName":"Gemini","buckets":[{"bucketId":"gemini-5h","remainingFraction":1,"resetTime":"2026-11-08T16:00:00Z"},{"bucketId":"gemini-weekly","remainingFraction":1,"resetTime":"2026-11-15T11:00:00Z"},{"bucketId":"3p-5h","remainingFraction":1,"resetTime":"2026-11-08T16:00:00Z"},{"bucketId":"3p-weekly","remainingFraction":0.9999,"resetTime":"2026-11-10T22:06:03Z"}]}]}""");
+        var started = J("""{"groups":[{"displayName":"Gemini","buckets":[{"bucketId":"gemini-5h","remainingFraction":0.2168,"resetTime":"2026-11-08T12:14:25Z"},{"bucketId":"gemini-weekly","remainingFraction":0.2989,"resetTime":"2026-11-14T07:48:20Z"},{"bucketId":"3p-5h","remainingFraction":1,"resetTime":"2026-11-08T13:00:00Z"}]}]}""");
+        Check(UsageMappers.AntigravityNeedsFallback(unstarted, requested) && !UsageMappers.AntigravityNeedsFallback(started, requested), "Only An Unstarted Primary Window Must Ask For The Daily Host");
+        var merged = UsageMappers.Antigravity([unstarted, started], null, requested);
+        Check(Row(merged, "Gemini 5h").Value == 78 && Row(merged, "Gemini 5h").ResetsAt == new DateTimeOffset(2026, 11, 8, 12, 14, 25, TimeSpan.Zero), "An Unstarted Primary Bucket Must Use The Daily Host's Real 5-Hour Window");
+        Check(Row(merged, "Gemini").Value == 70 && Row(merged, "Claude Weekly").Value == 0, "Unstarted Weekly Buckets Use The Daily Host; Started Primary Buckets Stay");
+        Check(Row(UsageMappers.Antigravity([unstarted], null, requested), "Gemini 5h").Value == 0, "Without A Daily Host An Unstarted Window Keeps Its Reported Values");
         var copilot = UsageMappers.Copilot(J(CopilotFixture));
         Check(Row(copilot, "Credits").Value == 25 && Row(copilot, "Extra Usage").Value == 3 && !copilot.Metrics.Any(m => m.Label == "Chat"), "Copilot unlimited suppression and overage");
         var personal = UsageMappers.Copilot(J("""{"token_based_billing":true,"quota_snapshots":{"premium_interactions":{"credits_used":12}}}"""));

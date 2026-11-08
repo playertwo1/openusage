@@ -45,8 +45,9 @@ OAuth tokens are renewed automatically when due. Cursor renews seven days early,
 because its access JWT also becomes its next refresh token. A failed early renewal keeps a still-valid
 token usable and displays an account-specific warning; an expired or rejected sign-in requires login.
 
-Provider response mapping and metric defaults follow the current Swift edition. All metrics start
-shown. Providers keep insertion order; a new account goes after its provider's existing accounts.
+Provider response mapping and metric defaults follow the current Swift edition. One exception: Antigravity's
+main quota host can report a window that has not started as full quota, so OpenUsage reads that window from
+the daily host when the daily host has a started one. All metrics start shown. Providers keep insertion order; a new account goes after its provider's existing accounts.
 **Accounts** supports renaming, removal, provider/account reordering and metric visibility. Right-click
 a metric to reorder it. Stars choose tray-menu favorites, initially matching the Swift defaults.
 The Windows tray has an icon and a short hover summary rather than the macOS text strip.
