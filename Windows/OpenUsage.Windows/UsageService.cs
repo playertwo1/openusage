@@ -154,8 +154,10 @@ public sealed class UsageService(Api api)
 
     private async Task<UsageSnapshot> Antigravity(string token, CancellationToken ct)
     {
-        var headers = new Dictionary<string, string> { ["User-Agent"] = "antigravity/2.24.0 (aidev_client; os_type=windows; arch=amd64)" };
+        // Cloud Code gates Gemini quota buckets on the hub identity; the bare client identity returns only 3P quotas.
+        var headers = new Dictionary<string, string> { ["User-Agent"] = "antigravity/hub/2.24.0 (aidev_client; os_type=windows; arch=amd64)" };
         var bases = new[] { "https://cloudcode-pa.googleapis.com", "https://daily-cloudcode-pa.googleapis.com" };
+        var quotaBases = new[] { "https://daily-cloudcode-pa.googleapis.com", "https://cloudcode-pa.googleapis.com" };
         var assist = await Hourly(ProviderKind.Antigravity, token, "plan", async () =>
         {
             Exception? failure = null;
@@ -174,7 +176,7 @@ public sealed class UsageService(Api api)
         }, ct);
         var bodies = new List<JsonNode>();
         Exception? error = null;
-        foreach (var host in bases)
+        foreach (var host in quotaBases)
         {
             try
             {

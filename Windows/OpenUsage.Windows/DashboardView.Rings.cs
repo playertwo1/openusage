@@ -10,9 +10,16 @@ namespace OpenUsage.Windows;
 public sealed partial class DashboardView
 {
     private Guid? expanded;
+    private bool expansionInitialized;
 
     private void RenderList(IReadOnlyDictionary<Guid, AccountStatus> statuses)
     {
+        if (!expansionInitialized)
+        {
+            expanded = store.State.Accounts.FirstOrDefault(account =>
+                MetricPresentation.Window(statuses.GetValueOrDefault(account.Id)?.Snapshot?.Metrics, true, metric => !store.IsHidden(account, metric)) is not null)?.Id;
+            expansionInitialized = expanded is not null;
+        }
         var rows = new List<W.UIElement>();
         foreach (var account in store.State.Accounts)
         {
@@ -44,7 +51,7 @@ public sealed partial class DashboardView
         var pace = weekly is null ? null : WeeklyPace.From(weekly, store.State.History.GetValueOrDefault(account.Id) ?? [], DateTimeOffset.UtcNow);
         var open = expanded == account.Id;
         var item = new C.StackPanel(); var shown = AccountName(account);
-        var row = Columns(new W.GridLength(1, W.GridUnitType.Star), W.GridLength.Auto);
+        var row = Columns(new W.GridLength(1, W.GridUnitType.Star), W.GridLength.Auto, W.GridLength.Auto);
         row.Margin = new W.Thickness(0, 12, 0, 10); row.Background = M.Brushes.Transparent;
         var title = Columns(W.GridLength.Auto, new W.GridLength(1, W.GridUnitType.Star));
         var icon = PresentationTheme.ProviderIcon(account.Kind, 23); icon.Margin = new W.Thickness(0, 0, 10, 0); title.Children.Add(icon);
@@ -52,7 +59,12 @@ public sealed partial class DashboardView
         names.Children.Add(Text(account.Kind.Name(), 15, "Foreground", true));
         var label = Text(shown, 12, "Muted"); label.TextWrapping = W.TextWrapping.Wrap; label.TextTrimming = W.TextTrimming.None;
         names.Children.Add(label); Put(title, names, 1); row.Children.Add(title);
-        var chevron = PresentationTheme.Icon(open ? "Up" : "Down", 16); Put(row, chevron, 1);
+        if (snapshot?.Plan is string plan)
+        {
+            var badge = new C.Border { CornerRadius = new W.CornerRadius(4), Padding = new W.Thickness(6, 2, 6, 2), VerticalAlignment = W.VerticalAlignment.Center, Child = Text(plan, 9, "Accent", true) };
+            badge.SetResourceReference(C.Border.BackgroundProperty, "AccentSoft"); Put(row, badge, 1);
+        }
+        var chevron = PresentationTheme.Icon(open ? "Up" : "Down", 16); chevron.Margin = new W.Thickness(8, 0, 0, 0); Put(row, chevron, 2);
         var head = new C.Border { Child = row, Focusable = true, Cursor = W.Input.Cursors.Hand, ContextMenu = RowMenu(account) };
         A.AutomationProperties.SetName(head, $"{account.Kind.Name()} {shown}");
         void Toggle() { expanded = open ? null : account.Id; LayoutChanged?.Invoke(); }
@@ -95,18 +107,14 @@ public sealed partial class DashboardView
         return line;
     }
 
-    // Number colour is the only alert: red from 85% used, amber when the weekly projection passes 100%.
+    // Bars keep their window colour; the value carries any pace or usage warning.
     private W.UIElement Cell(Metric? metric, WeeklyPace? pace)
     {
         if (metric is null || MetricPresentation.Fill(metric, display) is not double fill) { var none = Text("-", 12, "Muted"); none.HorizontalAlignment = W.HorizontalAlignment.Center; return none; }
-        var used = metric.Percent ?? 0; var alert = used >= 85 ? "Danger" : pace?.RunsOut == true ? "Warning" : null;
-        var cell = new C.StackPanel { VerticalAlignment = W.VerticalAlignment.Center };
-        var line = new C.StackPanel { Orientation = C.Orientation.Horizontal };
-        if (alert is not null) { var dot = new S.Ellipse { Width = 5, Height = 5, Margin = new W.Thickness(0, 0, 4, 0) }; dot.SetResourceReference(S.Shape.FillProperty, alert); line.Children.Add(dot); }
-        line.Children.Add(Text($"{fill:0}%", 14, alert ?? "Foreground", true));
-        if (metric.ResetsAt is DateTimeOffset reset) { var time = Text(Compact(reset), 10, "Muted"); time.Margin = new W.Thickness(4, 0, 0, 0); line.Children.Add(time); }
-        cell.Children.Add(line);
-        var bar = new C.Grid { Height = 3, Margin = new W.Thickness(0, 4, 0, 0) };
+        var used = metric.Percent ?? 0; var alert = display.Usage == UsageDisplay.Used && used >= 85 ? "Danger" : pace?.RunsOut == true ? "Warning" : "Foreground";
+        var cell = Columns(new W.GridLength(1, W.GridUnitType.Star), new W.GridLength(88));
+        cell.VerticalAlignment = W.VerticalAlignment.Center;
+        var bar = new C.Grid { Height = 4, Margin = new W.Thickness(0, 0, 12, 0), VerticalAlignment = W.VerticalAlignment.Center };
         var track = new C.Border { CornerRadius = new W.CornerRadius(2) }; track.SetResourceReference(C.Border.BackgroundProperty, "Track"); bar.Children.Add(track);
         var fillBar = new C.Border { CornerRadius = new W.CornerRadius(2), HorizontalAlignment = W.HorizontalAlignment.Left }; fillBar.SetResourceReference(C.Border.BackgroundProperty, MetricPresentation.BaseTone(metric.Label)); bar.Children.Add(fillBar);
         C.Border? tick = null;
@@ -117,6 +125,10 @@ public sealed partial class DashboardView
             if (tick is not null) tick.Margin = new W.Thickness(Math.Clamp(e.NewSize.Width * (display.Usage == UsageDisplay.Used ? pace!.Expected : 100 - pace!.Expected) / 100 - 1, 0, e.NewSize.Width - 2), 0, 0, 0);
         };
         cell.Children.Add(bar);
+        var value = new C.StackPanel { HorizontalAlignment = W.HorizontalAlignment.Right, VerticalAlignment = W.VerticalAlignment.Center };
+        value.Children.Add(Text($"{fill:0}%", 14, alert, true));
+        if (metric.ResetsAt is DateTimeOffset reset) value.Children.Add(Text(Compact(reset), 10, "Muted"));
+        Put(cell, value, 1);
         A.AutomationProperties.SetName(cell, $"{metric.Label}: {fill:0}% {(display.Usage == UsageDisplay.Used ? "used" : "left")}");
         return cell;
     }
@@ -168,40 +180,49 @@ public sealed partial class DashboardView
     private W.UIElement Details(Account account, AccountStatus? status, WeeklyPace? pace)
     {
         var panel = new C.Grid { Margin = new W.Thickness(0, 10, 0, 10) };
-        panel.RowDefinitions.Add(new() { Height = W.GridLength.Auto }); panel.RowDefinitions.Add(new() { Height = W.GridLength.Auto });
-        var text = new C.StackPanel();
+        panel.RowDefinitions.Add(new() { Height = W.GridLength.Auto });
+        panel.RowDefinitions.Add(new() { Height = W.GridLength.Auto });
+        panel.RowDefinitions.Add(new() { Height = W.GridLength.Auto });
         if (pace is not null)
         {
-            text.Children.Add(Text("Weekly Pace", 12, "Foreground", true));
-            text.Children.Add(Text($"Up to {pace.PerDayLeft:0}%/day left · Projected {pace.Projection:0}%", 11, "Muted"));
-            var chart = new C.Viewbox { Stretch = M.Stretch.Uniform, Child = Chart(pace), Margin = new W.Thickness(0, 10, 0, 0) };
+            var title = Text("Weekly Pace", 12, "Foreground", true); title.Margin = new W.Thickness(0, 0, 0, 8); panel.Children.Add(title);
+            var chart = new C.Viewbox { Stretch = M.Stretch.Uniform, Child = Chart(pace), Margin = new W.Thickness(0, 0, 0, 5) };
             C.Grid.SetRow(chart, 1); panel.Children.Add(chart);
+            var state = Text($"{pace.Used:0}% used · {(pace.RunsOut ? "above pace" : "within pace")}", 10, pace.RunsOut ? "Warning" : "Success");
+            state.Margin = new W.Thickness(0, 0, 0, 4); C.Grid.SetRow(state, 2); panel.Children.Add(state);
         }
-        else text.Children.Add(Text("No weekly window to pace for this account.", 11, "Muted"));
-        panel.Children.Add(text);
+        else panel.Children.Add(Text("No weekly window to pace for this account.", 11, "Muted"));
         return panel;
     }
 
     // Cumulative weekly use against the even-pace diagonal, with the projection to day 7 or to the 100% mark.
     internal static W.UIElement Chart(WeeklyPace pace)
     {
-        const double width = 360, height = 85;
-        double X(double day) => day / 7 * width; double Y(double percent) => height - Math.Min(percent, 100) / 100 * height;
-        var canvas = new C.Canvas { Width = width, Height = height + 13, Margin = new W.Thickness(0), VerticalAlignment = W.VerticalAlignment.Top };
-        var back = new S.Rectangle { Width = width, Height = height, RadiusX = 3, RadiusY = 3, Opacity = .35 }; back.SetResourceReference(S.Shape.FillProperty, "Background"); canvas.Children.Add(back);
+        const double width = 430, height = 132, left = 34, top = 9, plotWidth = 385, plotHeight = 91;
+        double X(double day) => left + day / 7 * plotWidth; double Y(double percent) => top + (100 - Math.Clamp(percent, 0, 100)) / 100 * plotHeight;
+        var canvas = new C.Canvas { Width = width, Height = height, Margin = new W.Thickness(0), VerticalAlignment = W.VerticalAlignment.Top };
         S.Shape Stroke(S.Shape shape, string tone, double thickness, double opacity = 1, M.DoubleCollection? dashes = null) { shape.StrokeThickness = thickness; shape.Opacity = opacity; if (dashes is not null) shape.StrokeDashArray = dashes; shape.SetResourceReference(S.Shape.StrokeProperty, tone); canvas.Children.Add(shape); return shape; }
-        Stroke(new S.Line { X1 = 0, Y1 = height, X2 = width, Y2 = 0 }, "Muted", 1, 1, [3, 3]);
+        for (var value = 0; value <= 100; value += 50)
+        {
+            var y = Y(value);
+            Stroke(new S.Line { X1 = left, Y1 = y, X2 = width - 8, Y2 = y }, "Border", 1, .75);
+            var label = Text($"{value}%", 9, "Muted"); label.Width = 29; label.TextAlignment = W.TextAlignment.Right;
+            C.Canvas.SetLeft(label, 0); C.Canvas.SetTop(label, y - 7); canvas.Children.Add(label);
+        }
+        for (var day = 0; day <= 7; day++)
+            Stroke(new S.Line { X1 = X(day), Y1 = top, X2 = X(day), Y2 = top + plotHeight }, "Border", 1, .45, [1, 3]);
+        Stroke(new S.Line { X1 = X(0), Y1 = Y(0), X2 = X(7), Y2 = Y(100) }, "Muted", 1, 1, [3, 3]);
         var now = pace.ElapsedHours / 24; var end = pace.RunOutHours is double h ? h / 24 : 7; var endPercent = pace.RunOutHours is null ? pace.Projection : 100;
-        Stroke(new S.Line { X1 = X(now), Y1 = Y(pace.Used), X2 = X(end), Y2 = Y(endPercent) }, "Swk", 1.5, .4, [2, 3]);
+        Stroke(new S.Line { X1 = X(now), Y1 = Y(pace.Used), X2 = X(end), Y2 = Y(endPercent) }, "Swk", 1.5, .85, [2, 3]);
         if (pace.RunsOut) { var ring = new S.Ellipse { Width = 5, Height = 5 }; ring.StrokeThickness = 1.5; ring.SetResourceReference(S.Shape.StrokeProperty, "Danger"); C.Canvas.SetLeft(ring, X(end) - 2.5); C.Canvas.SetTop(ring, Y(100) - 2.5); canvas.Children.Add(ring); }
         var line = new S.Polyline { Points = new M.PointCollection(pace.Points.Select(p => new W.Point(X(p.Day), Y(p.Percent)))), StrokeLineJoin = M.PenLineJoin.Round };
         Stroke(line, "Swk", 2);
         var dot = new S.Ellipse { Width = 6, Height = 6 }; dot.SetResourceReference(S.Shape.FillProperty, "Accent"); C.Canvas.SetLeft(dot, X(now) - 3); C.Canvas.SetTop(dot, Y(pace.Used) - 3); canvas.Children.Add(dot);
-        var today = Math.Clamp((int)now, 0, 6);
         for (var i = 0; i < 7; i++)
         {
-            var initial = Text(pace.Start.AddDays(i).ToLocalTime().ToString("ddd", System.Globalization.CultureInfo.InvariantCulture)[..1], 9, i == today ? "Accent" : "Muted", i == today);
-            initial.Width = width / 7; initial.TextAlignment = W.TextAlignment.Center; C.Canvas.SetLeft(initial, X(i)); C.Canvas.SetTop(initial, height + 1); canvas.Children.Add(initial);
+            var day = pace.Start.AddDays(i).ToLocalTime().ToString("ddd", System.Globalization.CultureInfo.CurrentCulture);
+            var label = Text(day[..Math.Min(3, day.Length)], 9, "Muted");
+            label.Width = 42; label.TextAlignment = W.TextAlignment.Center; C.Canvas.SetLeft(label, X(i) - 21); C.Canvas.SetTop(label, top + plotHeight + 4); canvas.Children.Add(label);
         }
         A.AutomationProperties.SetName(canvas, $"Weekly pace chart: {pace.Used:0}% used, projected {pace.Projection:0}%");
         return canvas;

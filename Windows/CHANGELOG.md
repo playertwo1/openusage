@@ -1,5 +1,12 @@
 # OpenUsage for Windows
 
+## 0.2.0
+
+- **Provider icon notch:** replace the collapsed ball with a compact pill showing provider icons. It docks flush at the top, bottom, sides and corners; side placement turns the pill vertical while keeping it fully visible.
+- **Mini widget settings:** choose the icon notch or expanded panel, keep the hover usage flyout, and activate the notch with click, Enter or Space.
+- **Windows dashboard:** refresh the account layout, default to Remaining, show provider plan badges and improve the weekly pace chart.
+- **Antigravity quotas:** use the hub client identity for Gemini quota buckets and try the daily quota endpoint first.
+
 ## 0.1.1
 
 - **Antigravity rings fixed:** Antigravity names its windows by model family, so the Overview rings, the bars, the mini widget, the weekly pace and the daily history found nothing to show. OpenUsage now uses Session, Gemini 5h or Claude 5h for the 5h window and Weekly, Gemini or Claude Weekly for the week, taking the first one present in that order. They keep the purple and cyan identity colors.

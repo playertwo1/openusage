@@ -62,8 +62,10 @@ public sealed partial class ShellView
         AutomationProperties.SetName(shortcut, "Global Shortcut Ctrl Alt U");
         Row(general, "Global Shortcut", "Open or hide the panel from anywhere", shortcut);
 
-        Row(general, "Mini Widget", "A small floating panel you can place anywhere", Toggle("Mini Widget", store.State.Display.MiniWidget,
+        Row(general, "Mini Widget", "Show a floating usage panel you can place anywhere", Toggle("Mini Widget", store.State.Display.MiniWidget,
             value => EditDisplay(display => display.MiniWidget = value)));
+        Row(general, "Mini Widget Style", "Choose the expanded panel or provider icons", Choice("Mini Widget Style", new[] { false, true }, store.State.Display.MiniCollapsed,
+            value => EditDisplay(display => display.MiniCollapsed = value), value => value ? "Provider icons" : "Expanded panel"));
         Row(general, "Orientation", null, Choice("Mini Widget Orientation", new[] { false, true }, store.State.Display.MiniVertical,
             value => EditDisplay(display => display.MiniVertical = value), value => value ? "Vertical" : "Horizontal"));
         Row(general, "Always On Top", null, Toggle("Mini Widget Always On Top", store.State.Display.MiniOnTop,

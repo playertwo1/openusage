@@ -81,7 +81,6 @@ public sealed partial class ShellView : WpfUserControl
         actions.Children.Add(refreshButton);
         var settings = IconButton("Settings", "Settings", () => Navigate("Settings"));
         navigation.Add("Settings", settings); actions.Children.Add(settings);
-        actions.Children.Add(IconButton("Close", "Close Window", () => HideRequested?.Invoke()));
         Grid.SetColumn(actions, 1); header.Children.Add(actions); root.Children.Add(header);
         Grid.SetRow(pageHost, 2); root.Children.Add(pageHost);
 
@@ -149,7 +148,7 @@ public sealed partial class ShellView : WpfUserControl
         row.ColumnDefinitions.Add(new ColumnDefinition());
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         quickControls.Children.Clear(); usageButtons.Clear(); filterButtons.Clear();
-        foreach (var mode in Enum.GetValues<UsageDisplay>())
+        foreach (var mode in new[] { UsageDisplay.Remaining, UsageDisplay.Used })
         {
             var button = Button(mode == UsageDisplay.Used ? "Used" : "Remaining", "SegmentButton", () => EditDisplay(display => display.Usage = mode));
             button.FontSize = 11;

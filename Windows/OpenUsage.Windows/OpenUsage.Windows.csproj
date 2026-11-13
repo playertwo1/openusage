@@ -9,7 +9,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets/OpenUsage.ico</ApplicationIcon>
     <AssemblyName>OpenUsage</AssemblyName>
-    <Version>0.1.1</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets/OpenUsage.ico" LogicalName="OpenUsage.AppIcon.ico" />

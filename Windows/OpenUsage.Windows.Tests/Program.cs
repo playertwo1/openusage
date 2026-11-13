@@ -64,8 +64,6 @@ try
     var uiDirectory = Path.Combine(directory, "ui");
     Directory.CreateDirectory(uiDirectory);
     UiChecks.Run(uiDirectory, args.Length == 2 && args[0] == "--render" ? args[1] : null);
-    foreach (var file in Directory.EnumerateFiles(uiDirectory)) File.Delete(file);
-    Directory.Delete(uiDirectory);
     Console.WriteLine("PASS: Storage, Ordering, Credential Protection, OAuth, Usage And Rendered UI Regression Checks");
 }
 finally

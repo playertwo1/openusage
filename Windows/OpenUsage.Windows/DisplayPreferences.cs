@@ -7,20 +7,22 @@ public enum ViewDensity { Comfortable, Compact }
 public enum DashboardLayout { Cards, List }
 public enum UsageDisplay { Used, Remaining }
 public enum ResetDisplay { Countdown, Exact }
+[Flags]
+public enum MiniDockEdges { None = 0, Left = 1, Top = 2, Right = 4, Bottom = 8 }
 
 public sealed class DisplayPreferences
 {
-    public bool SoftTransparency { get; set; } = true;
+    public bool SoftTransparency { get; set; }
     public ColorTheme Theme { get; set; } = ColorTheme.System;
     public ViewDensity Density { get; set; } = ViewDensity.Comfortable;
     public DashboardLayout Layout { get; set; } = DashboardLayout.Cards;
-    public UsageDisplay Usage { get; set; } = UsageDisplay.Used;
+    public UsageDisplay Usage { get; set; } = UsageDisplay.Remaining;
     public ResetDisplay Reset { get; set; } = ResetDisplay.Countdown;
     public bool FavoritesOnly { get; set; }
     public bool HideAccountNames { get; set; }
     public int TextSize { get; set; } = 100;
     public bool MiniWidget { get; set; }
-    public bool MiniCollapsed { get; set; } = true;
+    public bool MiniCollapsed { get; set; }
     public bool MiniVertical { get; set; }
     public bool MiniOnTop { get; set; } = true;
     public bool MiniLocked { get; set; }

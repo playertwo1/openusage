@@ -57,9 +57,9 @@ public static class UiChecks
                 Console.WriteLine($"Mini Widget Smoke: Visible={widget.Visible} Bounds={widget.Bounds}");
                 var widgetView = (MiniWidgetView)widget.Controls.OfType<System.Windows.Forms.Integration.ElementHost>().Single().Child;
                 Click(Descendants(widgetView).OfType<C.Button>().Single(b => AutomationProperties.GetName(b) == "Collapse Mini Widget"));
-                Check(miniStore.State.Display.MiniCollapsed && widget.Width == widget.Height, "The Real Widget Must Resize To A Circle When Collapsed");
+                Check(miniStore.State.Display.MiniCollapsed && widget.Width > widget.Height, "The Real Widget Must Resize To A Horizontal Icon Pill When Collapsed");
                 widget.ShowFlyout();
-                Check(miniStore.State.Display.MiniCollapsed && widget.Width == widget.Height, "Opening The Hover Panel Must Keep The Ball Collapsed");
+                Check(miniStore.State.Display.MiniCollapsed && widget.Width > widget.Height, "Opening The Hover Panel Must Keep The Icon Pill Collapsed");
                 Console.WriteLine($"Collapsed Widget Smoke: Size={widget.Width}x{widget.Height}");
             }
             catch (Exception error) { failure = error; }
@@ -82,18 +82,18 @@ public static class UiChecks
                 System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left)
                 { RoutedEvent = UIElement.MouseLeftButtonDownEvent });
             Press();
-            Check(!toggleStore.State.Display.MiniCollapsed, "Clicking The Ball Must Expand The Widget");
+            Check(!toggleStore.State.Display.MiniCollapsed, "Clicking The Icon Pill Must Expand The Widget");
             Check(widget.Width > widget.Height, "Expansion Must Resize The Visible Widget Without A Refresh");
             Press();
-            Check(toggleStore.State.Display.MiniCollapsed && widget.Width == widget.Height,
-                "Clicking The Expanded Widget Must Restore The Ball");
+            Check(toggleStore.State.Display.MiniCollapsed && widget.Width > widget.Height,
+                "Clicking The Expanded Widget Must Restore The Icon Pill");
             var expand = view.ContextMenu.Items.OfType<C.MenuItem>().Single(item => Equals(item.Header, "Expand widget"));
             expand.RaiseEvent(new RoutedEventArgs(C.MenuItem.ClickEvent));
             Check(!toggleStore.State.Display.MiniCollapsed && widget.Width > widget.Height,
                 "Expand Widget Menu Must Resize Immediately Without Refresh Now");
             Click(Descendants(view).OfType<C.Button>().Single(b => AutomationProperties.GetName(b) == "Collapse Mini Widget"));
-            Check(toggleStore.State.Display.MiniCollapsed && widget.Width == widget.Height,
-                "Minus Button Must Immediately Restore The Ball Size");
+            Check(toggleStore.State.Display.MiniCollapsed && widget.Width > widget.Height,
+                "Minus Button Must Immediately Restore The Icon Pill Size");
         }
         using (var api = new Api())
         using (var form = new MainForm(new AccountStore(Path.Combine(directory, "close")), api))
@@ -101,7 +101,7 @@ public static class UiChecks
             form.Show();
             var host = form.Controls.OfType<System.Windows.Forms.Integration.ElementHost>().Single();
             var close = Descendants((ShellView)host.Child).OfType<C.Button>()
-                .Single(b => AutomationProperties.GetName(b) == "Close Window");
+                .Single(b => AutomationProperties.GetName(b) == "Hide OpenUsage");
             close.RaiseEvent(new RoutedEventArgs(C.Button.ClickEvent));
             Check(!form.Visible && !form.IsDisposed, "Close Button Must Hide The Window Without Exiting");
             form.Show();
@@ -115,14 +115,49 @@ public static class UiChecks
         Check(corner.Left == -1914 && corner.Top == 6, "Mini Must Snap To Both Edges At A Corner On A Negative-Origin Monitor");
         var bottom = MiniWidgetForm.SnapBounds(new(-225, 950, 200, 60), workArea, 1.5);
         Check(bottom.Right == -9 && bottom.Bottom == 1031, "Mini Magnetism Must Respect DPI And The Taskbar Work Area");
+        var flushCorner = MiniWidgetForm.SnapBounds(new(-1910, 20, 140, 40), workArea, 1, flushToEdge: true);
+        Check(flushCorner.Left == workArea.Left && flushCorner.Top == workArea.Top, "The Icon Notch Must Touch Both Edges At A Corner");
+        var flushRight = MiniWidgetForm.SnapBounds(new(-50, 500, 40, 130), workArea, 1, flushToEdge: true);
+        Check(flushRight.Right == workArea.Right, "A Side Icon Pill Must Touch The Screen Edge");
         var free = new System.Drawing.Rectangle(-1000, 400, 200, 60);
         Check(MiniWidgetForm.SnapBounds(free, workArea, 1) == free, "Mini Must Move Freely Away From Edges");
+        var dockStore = new AccountStore(Path.Combine(directory, "docks"));
+        var dockAccount = new Account(Guid.NewGuid(), ProviderKind.Claude, "Fixture", new Credential("fixture-only"));
+        dockStore.Add(dockAccount);
+        dockStore.Edit(s => { s.Display.MiniCollapsed = true; s.Display.MiniX = 0; s.Display.MiniY = 0.5; });
+        var dockStatuses = new Dictionary<Guid, AccountStatus>
+        {
+            [dockAccount.Id] = new() { Snapshot = new("Max", [new("Session", 20), new("Weekly", 40)]) }
+        };
+        using (var dockWidget = new MiniWidgetForm(dockStore))
+        {
+            dockWidget.Render(dockStatuses, "Fixture");
+            var dockArea = System.Windows.Forms.Screen.FromRectangle(dockWidget.Bounds).WorkingArea;
+            Check(dockWidget.Left == dockArea.Left && dockWidget.Height > dockWidget.Width, "Saved Left Dock Must Be Fully Visible And Vertical");
+            void PlaceAt(double x, double y)
+            {
+                dockStore.Edit(s => { s.Display.MiniX = x; s.Display.MiniY = y; });
+                dockWidget.Render(dockStatuses, "Fixture");
+            }
+            PlaceAt(1, 0.5);
+            Check(dockWidget.Right == dockArea.Right && dockWidget.Height > dockWidget.Width, "Saved Right Dock Must Be Fully Visible And Vertical");
+            PlaceAt(0.5, 0);
+            Check(dockWidget.Top == dockArea.Top && dockWidget.Width > dockWidget.Height, "Saved Top Dock Must Be Horizontal And Flush");
+            PlaceAt(0.5, 1);
+            Check(dockWidget.Bottom == dockArea.Bottom && dockWidget.Width > dockWidget.Height, "Saved Bottom Dock Must Be Horizontal And Flush");
+            PlaceAt(0, 0);
+            Check(dockWidget.Left == dockArea.Left && dockWidget.Top == dockArea.Top && dockWidget.Width > dockWidget.Height,
+                "Saved Top-Left Corner Must Attach On Both Edges");
+            PlaceAt(1, 1);
+            Check(dockWidget.Right == dockArea.Right && dockWidget.Bottom == dockArea.Bottom && dockWidget.Width > dockWidget.Height,
+                "Saved Bottom-Right Corner Must Attach On Both Edges");
+        }
         var store = new AccountStore(directory);
         foreach (var existing in store.State.Accounts.ToArray()) store.Remove(existing.Id);
         var codex = new Account(Guid.NewGuid(), ProviderKind.Codex, "Personal", new Credential("fixture-only"));
         var claude = new Account(Guid.NewGuid(), ProviderKind.Claude, "Work", new Credential("fixture-only-claude"));
         store.Add(codex); store.Add(claude);
-        store.Edit(s => s.Display.Theme = ColorTheme.Light);
+        store.Edit(s => { s.Display.Theme = ColorTheme.Light; s.Display.Usage = UsageDisplay.Used; });
         var now = DateTimeOffset.UtcNow;
         var snapshot = new UsageSnapshot("Pro", [new("Session", 23, ResetsAt: now.AddHours(3)), new("Weekly", 64, ResetsAt: now.AddDays(4)), new("Extra Usage", 100, Unit: "credits")]);
         var statuses = new Dictionary<Guid, AccountStatus>
@@ -138,14 +173,17 @@ public static class UiChecks
         shell.Dashboard.LayoutChanged += () => { shell.RefreshPreferences(); shell.Render(statuses, false, "Updated just now"); };
         Render(shell, 440, 700, null);
         shell.Measure(new System.Windows.Size(440, double.PositiveInfinity));
-        var collapsedHeight = shell.MeasureContentHeight(440);
         var open = Descendants(shell).OfType<C.Border>().First(b => AutomationProperties.GetName(b) == "ChatGPT Personal");
+        open.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left) { RoutedEvent = UIElement.MouseLeftButtonUpEvent });
+        shell.Measure(new System.Windows.Size(440, double.PositiveInfinity));
+        var collapsedHeight = shell.MeasureContentHeight(440);
+        open = Descendants(shell).OfType<C.Border>().First(b => AutomationProperties.GetName(b) == "ChatGPT Personal");
         open.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left) { RoutedEvent = UIElement.MouseLeftButtonUpEvent });
         shell.Measure(new System.Windows.Size(440, double.PositiveInfinity));
         Check(shell.MeasureContentHeight(440) > collapsedHeight, "Opening A Chart Must Increase The Natural Window Height");
         Render(shell, 440, shell.MeasureContentHeight(440), renderPath);
         Check(Descendants(shell).OfType<C.TextBlock>().Any(t => t.Text == "23%"), "Usage Values Must Render");
-        Check(Descendants(shell).OfType<C.TextBlock>().Any(t => t.Text.StartsWith("Up to ")), "Expanding A Row Must Show The Weekly Pace");
+        Check(Descendants(shell).OfType<C.TextBlock>().Any(t => t.Text == "Weekly Pace"), "Expanding A Row Must Show The Weekly Pace");
         Check(Descendants(shell).OfType<C.Border>().Count(b => AutomationProperties.GetName(b).Contains(" Personal") || AutomationProperties.GetName(b).Contains(" Work")) == 2, "Every Account Must Have One Row");
         var card = Descendants(shell).OfType<C.Border>().First(b => AutomationProperties.GetName(b) == "Accounts");
         Check(card.ActualWidth >= 370, "Account List Must Fill Available Width");
@@ -162,10 +200,24 @@ public static class UiChecks
         var miniRows = MiniRow.Build(store, statuses);
         Check(miniRows.Select(r => r.Short).SequenceEqual(new[] { "Cx", "C" }), "Mini Widget Labels Must Follow Provider And Account Order");
         Check(new MiniRow(codex, "Cx", new Metric("Session", 90), null, null).Alert == "Danger", "Mini Widget Must Flag Use From 85 Percent");
+        store.Edit(s => s.Display.MiniCollapsed = true);
+        var iconPill = new MiniWidgetView(); iconPill.Render(miniRows, store.State.Display, MiniDockEdges.Top);
+        iconPill.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        Check(iconPill.DesiredSize.Width > iconPill.DesiredSize.Height, "A Top Icon Pill Must Stay Horizontal");
+        Check(Descendants(iconPill).OfType<C.Viewbox>().Count() == 2 && !Descendants(iconPill).OfType<C.TextBlock>().Any(),
+            "Collapsed Mini Must Show One Provider Icon Per Provider Without Text");
+        Render(iconPill, iconPill.DesiredSize.Width, iconPill.DesiredSize.Height, Variant(renderPath, "mini-icons"));
+        iconPill.Render(miniRows, store.State.Display, MiniDockEdges.Left);
+        iconPill.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        Check(iconPill.DesiredSize.Height > iconPill.DesiredSize.Width, "A Side Icon Pill Must Turn Vertical");
+        var sidePill = Descendants(iconPill).OfType<C.Border>().Single(b => AutomationProperties.GetName(b).StartsWith("Expand Mini Widget"));
+        Check(sidePill.CornerRadius.TopLeft == 0 && sidePill.CornerRadius.BottomLeft == 0 && sidePill.BorderThickness.Left == 0,
+            "A Side Icon Pill Must Meet The Screen Edge Without A Gap");
+        Render(iconPill, iconPill.DesiredSize.Width, iconPill.DesiredSize.Height, Variant(renderPath, "mini-icons-side"));
         store.Edit(s => s.Display.MiniCollapsed = false);
         var pill = new MiniWidgetView(); pill.Render(miniRows, store.State.Display);
         pill.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-        Check(pill.DesiredSize.Width < 280 && pill.DesiredSize.Height < 65, "Two-Account Mini Must Stay Compact Without Hiding Either Window");
+        Check(pill.DesiredSize.Width < 340 && pill.DesiredSize.Height < 65, "Two-Account Mini Must Stay Compact Without Hiding Either Window");
         Render(pill, pill.DesiredSize.Width, pill.DesiredSize.Height, Variant(renderPath, "mini"));
         Check(Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "ChatGPT") && Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "Claude"), "Mini Widget Must Label Every Account");
         store.Edit(s => s.Display.MiniVertical = true); pill.Render(miniRows, store.State.Display); Render(pill, 200, 180, Variant(renderPath, "mini-vertical")); store.Edit(s => s.Display.MiniVertical = false);
@@ -188,22 +240,23 @@ public static class UiChecks
         Check(MetricPresentation.Fill(new("Session", 23), store.State.Display) == 77, "Bar Must Match Remaining Value");
         Check(MetricPresentation.Reset(now.AddMinutes(30), new(), now) == "Resets in 30m", "Reset Countdown");
         Check(MetricPresentation.Reset(now.AddMinutes(-1), new(), now) == "Reset due", "Expired Reset Label");
-        Check(!Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "5h" || t.Text == "Week"), "Mini Must Keep Window Labels Hidden");
+        Check(Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "5h") && Descendants(pill).OfType<C.TextBlock>().Any(t => t.Text == "Week"), "Expanded Mini Must Label Its Usage Windows");
         Check(!Descendants(pill).OfType<System.Windows.Shapes.Ellipse>().Any(), "Mini Must Not Draw Alert Dots");
         var collapsed = false;
         pill.CollapseRequested += () => { store.Edit(s => s.Display.MiniCollapsed = !s.Display.MiniCollapsed); collapsed = true; };
         Click(Descendants(pill).OfType<C.Button>().Single(b => AutomationProperties.GetName(b) == "Collapse Mini Widget"));
-        Check(collapsed && new AccountStore(directory).State.Display.MiniCollapsed, "Collapse Button Must Persist The Ball Mode");
-        pill.Render(miniRows, store.State.Display);
-        Render(pill, 32, 32, Variant(renderPath, "ball"));
-        Check(pill.DesiredSize.Width == 32 && pill.DesiredSize.Height == 32 && !Descendants(pill).OfType<C.TextBlock>().Any(), "Ball Mode Must Be A Single Small Icon Without Metrics");
-        var ball = Descendants(pill).OfType<C.Border>().Single(b => AutomationProperties.GetName(b) == "Expand Mini Widget");
-        var ballHovered = false; pill.HoverStarted += () => ballHovered = true;
-        ball.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = System.Windows.Input.Mouse.MouseEnterEvent });
-        Check(ballHovered, "Hovering The Collapsed Ball Must Request The Usage Panel");
+        Check(collapsed && new AccountStore(directory).State.Display.MiniCollapsed, "Collapse Button Must Persist The Provider Icon Mode");
+        pill.Render(miniRows, store.State.Display, MiniDockEdges.Top);
+        pill.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        Render(pill, pill.DesiredSize.Width, pill.DesiredSize.Height, Variant(renderPath, "mini-icons-accounts"));
+        Check(Descendants(pill).OfType<C.Viewbox>().Count() == 2 && !Descendants(pill).OfType<C.TextBlock>().Any(), "Provider Icon Mode Must Show Marks Without Usage Text");
+        var iconPillBorder = Descendants(pill).OfType<C.Border>().Single(b => AutomationProperties.GetName(b).StartsWith("Expand Mini Widget"));
+        var pillHovered = false; pill.HoverStarted += () => pillHovered = true;
+        iconPillBorder.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = System.Windows.Input.Mouse.MouseEnterEvent });
+        Check(pillHovered, "Hovering The Icon Pill Must Request The Usage Panel");
         using (var inputSource = new System.Windows.Interop.HwndSource(new System.Windows.Interop.HwndSourceParameters("Fixture Input")))
-            ball.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, inputSource, 0, System.Windows.Input.Key.Enter) { RoutedEvent = UIElement.KeyDownEvent });
-        Check(!store.State.Display.MiniCollapsed, "The Ball Must Expand With Keyboard Activation");
+            iconPillBorder.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, inputSource, 0, System.Windows.Input.Key.Enter) { RoutedEvent = UIElement.KeyDownEvent });
+        Check(!store.State.Display.MiniCollapsed, "The Icon Pill Must Expand With Keyboard Activation");
         shell.Navigate("Settings"); Render(shell, 440, 700, Variant(renderPath, "settings"));
         var resetTimes = Descendants(shell).OfType<C.ComboBox>().Single(c => AutomationProperties.GetName(c) == "Reset Times");
         resetTimes.SelectedIndex = 1;

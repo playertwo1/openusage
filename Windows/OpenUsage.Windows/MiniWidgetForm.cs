@@ -3,7 +3,7 @@ using System.Windows.Forms.Integration;
 
 namespace OpenUsage.Windows;
 
-// A small borderless window the user places anywhere: drag it, hover for the flyout, right-click for the menu.
+// A small borderless window the user docks to an edge: drag it, hover for the flyout, right-click for the menu.
 public sealed class MiniWidgetForm : Form
 {
     private readonly AccountStore store;
@@ -49,14 +49,17 @@ public sealed class MiniWidgetForm : Form
         rows = MiniRow.Build(store, statuses);
         updated = statuses.Values.Select(s => s.FetchedAt).Where(t => t.HasValue).DefaultIfEmpty(null).Max();
         status = statusText;
-        view.Render(rows, display); view.ContextMenu = BuildMenu();
+        var dockedEdges = display.MiniCollapsed
+            ? SavedDockEdges(display, SavedScreen().WorkingArea, Size, DeviceDpi / 96d)
+            : MiniDockEdges.None;
+        view.Render(rows, display, dockedEdges); view.ContextMenu = BuildMenu();
         TopMost = display.MiniOnTop;
         if (flyout.Visible) flyout.Render(rows, updated, status);
-        Fit();
+        Fit(dockedEdges);
     }
 
     // Sizes the window to its content and puts it back inside the work area.
-    private void Fit()
+    private void Fit(MiniDockEdges dockedEdges)
     {
         view.UpdateLayout();
         view.InvalidateMeasure();
@@ -64,16 +67,44 @@ public sealed class MiniWidgetForm : Form
         var scale = DeviceDpi / 96d; var size = view.DesiredSize;
         var wasVisible = Visible;
         ClientSize = new Size((int)Math.Ceiling(size.Width * scale), (int)Math.Ceiling(size.Height * scale));
-        using var path = RoundedPath(new Rectangle(0, 0, Width, Height), (int)((store.State.Display.MiniCollapsed ? 16 : 14) * scale));
+        using var path = store.State.Display.MiniCollapsed
+            ? DockedPath(new Rectangle(0, 0, Width, Height), (int)(14 * scale), dockedEdges)
+            : RoundedPath(new Rectangle(0, 0, Width, Height), (int)(14 * scale));
         Region = new Region(path);
         Place(wasVisible || store.State.Display.MiniWidget);
     }
 
     private static GraphicsPath RoundedPath(Rectangle area, int radius)
     {
-        var d = radius * 2; var path = new GraphicsPath();
-        path.AddArc(area.X, area.Y, d, d, 180, 90); path.AddArc(area.Right - d, area.Y, d, d, 270, 90);
-        path.AddArc(area.Right - d, area.Bottom - d, d, d, 0, 90); path.AddArc(area.X, area.Bottom - d, d, d, 90, 90); path.CloseFigure(); return path;
+        return RoundedPath(area, radius, radius, radius, radius);
+    }
+
+    private static GraphicsPath DockedPath(Rectangle area, int radius, MiniDockEdges edges)
+    {
+        var topLeft = radius; var topRight = radius; var bottomRight = radius; var bottomLeft = radius;
+        if ((edges & MiniDockEdges.Top) != 0) topLeft = topRight = 0;
+        if ((edges & MiniDockEdges.Bottom) != 0) bottomLeft = bottomRight = 0;
+        if ((edges & MiniDockEdges.Left) != 0) topLeft = bottomLeft = 0;
+        if ((edges & MiniDockEdges.Right) != 0) topRight = bottomRight = 0;
+        return RoundedPath(area, topLeft, topRight, bottomRight, bottomLeft);
+    }
+
+    private static GraphicsPath RoundedPath(Rectangle area, int topLeft, int topRight, int bottomRight, int bottomLeft)
+    {
+        var limit = Math.Min(area.Width, area.Height) / 2;
+        topLeft = Math.Clamp(topLeft, 0, limit); topRight = Math.Clamp(topRight, 0, limit);
+        bottomRight = Math.Clamp(bottomRight, 0, limit); bottomLeft = Math.Clamp(bottomLeft, 0, limit);
+        var path = new GraphicsPath();
+        path.StartFigure();
+        path.AddLine(area.Left + topLeft, area.Top, area.Right - topRight, area.Top);
+        if (topRight > 0) path.AddArc(area.Right - 2 * topRight, area.Top, 2 * topRight, 2 * topRight, 270, 90);
+        path.AddLine(area.Right, area.Top + topRight, area.Right, area.Bottom - bottomRight);
+        if (bottomRight > 0) path.AddArc(area.Right - 2 * bottomRight, area.Bottom - 2 * bottomRight, 2 * bottomRight, 2 * bottomRight, 0, 90);
+        path.AddLine(area.Right - bottomRight, area.Bottom, area.Left + bottomLeft, area.Bottom);
+        if (bottomLeft > 0) path.AddArc(area.Left, area.Bottom - 2 * bottomLeft, 2 * bottomLeft, 2 * bottomLeft, 90, 90);
+        path.AddLine(area.Left, area.Bottom - bottomLeft, area.Left, area.Top + topLeft);
+        if (topLeft > 0) path.AddArc(area.Left, area.Top, 2 * topLeft, 2 * topLeft, 180, 90);
+        path.CloseFigure(); return path;
     }
 
     private Screen SavedScreen()
@@ -86,10 +117,41 @@ public sealed class MiniWidgetForm : Form
     public void Place(bool show)
     {
         var display = store.State.Display; var area = SavedScreen().WorkingArea;
-        var x = display.MiniX < 0 ? area.Right - Width - 16 : area.Left + (int)Math.Round(display.MiniX * Math.Max(0, area.Width - Width));
-        var y = display.MiniY < 0 ? area.Top + 16 : area.Top + (int)Math.Round(display.MiniY * Math.Max(0, area.Height - Height));
+        var defaultPosition = display.MiniX < 0 && display.MiniY < 0;
+        var x = display.MiniCollapsed && defaultPosition ? area.Left + (area.Width - Width) / 2
+            : display.MiniX < 0 ? area.Right - Width - 16 : area.Left + (int)Math.Round(display.MiniX * Math.Max(0, area.Width - Width));
+        var y = display.MiniCollapsed && defaultPosition ? area.Top
+            : display.MiniY < 0 ? area.Top + 16 : area.Top + (int)Math.Round(display.MiniY * Math.Max(0, area.Height - Height));
+        if (display.MiniCollapsed)
+        {
+            var edges = SavedDockEdges(display, area, Size, DeviceDpi / 96d);
+            if ((edges & MiniDockEdges.Left) != 0) x = area.Left;
+            else if ((edges & MiniDockEdges.Right) != 0) x = area.Right - Width;
+            if ((edges & MiniDockEdges.Top) != 0) y = area.Top;
+            else if ((edges & MiniDockEdges.Bottom) != 0) y = area.Bottom - Height;
+        }
         Location = new Point(Math.Clamp(x, area.Left, Math.Max(area.Left, area.Right - Width)), Math.Clamp(y, area.Top, Math.Max(area.Top, area.Bottom - Height)));
         if (show && !Visible) Show();
+    }
+
+    private static MiniDockEdges SavedDockEdges(DisplayPreferences display, Rectangle area, Size size, double scale)
+    {
+        if (display.MiniX < 0 && display.MiniY < 0) return MiniDockEdges.Top;
+        var edges = MiniDockEdges.None;
+        var reach = 32 * scale;
+        var xRange = Math.Max(1, area.Width - size.Width);
+        var yRange = Math.Max(1, area.Height - size.Height);
+        if (display.MiniX is >= 0 and <= 1)
+        {
+            if (display.MiniX * xRange <= reach) edges |= MiniDockEdges.Left;
+            else if ((1 - display.MiniX) * xRange <= reach) edges |= MiniDockEdges.Right;
+        }
+        if (display.MiniY is >= 0 and <= 1)
+        {
+            if (display.MiniY * yRange <= reach) edges |= MiniDockEdges.Top;
+            else if ((1 - display.MiniY) * yRange <= reach) edges |= MiniDockEdges.Bottom;
+        }
+        return edges;
     }
 
     private void OnDisplaysChanged(object? sender, EventArgs e) { if (!IsDisposed && IsHandleCreated) BeginInvoke(() => Place(Visible)); }
@@ -120,15 +182,15 @@ public sealed class MiniWidgetForm : Form
         var edges = new int[4];
         System.Runtime.InteropServices.Marshal.Copy(m.LParam, edges, 0, 4);
         var bounds = Rectangle.FromLTRB(edges[0], edges[1], edges[2], edges[3]);
-        var snapped = SnapBounds(bounds, Screen.FromRectangle(bounds).WorkingArea, DeviceDpi / 96d);
+        var snapped = SnapBounds(bounds, Screen.FromRectangle(bounds).WorkingArea, DeviceDpi / 96d, store.State.Display.MiniCollapsed);
         System.Runtime.InteropServices.Marshal.Copy(new[] { snapped.Left, snapped.Top, snapped.Right, snapped.Bottom }, 0, m.LParam, 4);
         m.Result = (IntPtr)1;
     }
 
-    public static Rectangle SnapBounds(Rectangle bounds, Rectangle area, double scale)
+    public static Rectangle SnapBounds(Rectangle bounds, Rectangle area, double scale, bool flushToEdge = false)
     {
         var reach = (int)Math.Round(32 * scale);
-        var gap = (int)Math.Round(6 * scale);
+        var gap = flushToEdge ? 0 : (int)Math.Round(6 * scale);
         var x = bounds.Left; var y = bounds.Top;
         if (Math.Abs(x - area.Left) <= reach) x = area.Left + gap;
         else if (Math.Abs(area.Right - bounds.Right) <= reach) x = area.Right - bounds.Width - gap;
@@ -140,7 +202,7 @@ public sealed class MiniWidgetForm : Form
 
     private void Snap()
     {
-        Bounds = SnapBounds(Bounds, Screen.FromRectangle(Bounds).WorkingArea, DeviceDpi / 96d);
+        Bounds = SnapBounds(Bounds, Screen.FromRectangle(Bounds).WorkingArea, DeviceDpi / 96d, store.State.Display.MiniCollapsed);
     }
 
     private void SavePosition()
@@ -162,8 +224,11 @@ public sealed class MiniWidgetForm : Form
     private void PositionFlyout()
     {
         var area = Screen.FromRectangle(Bounds).WorkingArea; var size = flyout.Size;
+        var display = store.State.Display;
+        var edges = display.MiniCollapsed ? SavedDockEdges(display, area, Size, DeviceDpi / 96d) : MiniDockEdges.None;
+        var vertical = MiniWidgetView.VerticalFor(display, edges);
         int x, y;
-        if (store.State.Display.MiniVertical)
+        if (vertical)
         {
             x = Right + 8 + size.Width <= area.Right ? Right + 8 : Left - 8 - size.Width; y = Top;
         }
@@ -187,7 +252,7 @@ public sealed class MiniWidgetForm : Form
             item.Click += (_, _) => action(); return item;
         }
         menu.Items.Add(Item("Always on top", () => PreferenceChanged?.Invoke(d => d.MiniOnTop = !display.MiniOnTop), display.MiniOnTop));
-        menu.Items.Add(Item(display.MiniCollapsed ? "Expand widget" : "Collapse to ball", ToggleCollapsed));
+        menu.Items.Add(Item(display.MiniCollapsed ? "Expand widget" : "Collapse to provider icons", ToggleCollapsed));
         menu.Items.Add(Item("Lock position", () => PreferenceChanged?.Invoke(d => d.MiniLocked = !display.MiniLocked), display.MiniLocked));
         menu.Items.Add(Item("Vertical layout", () => PreferenceChanged?.Invoke(d => d.MiniVertical = !display.MiniVertical), display.MiniVertical));
         menu.Items.Add(new System.Windows.Controls.Separator());

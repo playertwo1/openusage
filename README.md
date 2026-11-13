@@ -21,15 +21,14 @@ Session limits, weekly usage and reset times — in your tray, on your desktop, 
 This fork adds a native Windows edition to [Robin Ebers' OpenUsage](https://github.com/robinebers/openusage).
 Windows and macOS have separate builds and releases.
 
-> **New Windows interface:** the screenshots and features below reflect the current `main` branch.
-> The published **v0.1.1 executable is an earlier build**. To use the new interface now,
-> [build from source](#windows) or download the artifact from a successful [Windows CI run](https://github.com/playertwo1/openusage/actions/workflows/windows.yml).
+> **Windows 0.2.0:** the current Windows interface includes the provider icon notch, which docks to
+> screen edges and corners. See the [Windows release](https://github.com/playertwo1/openusage/releases/tag/windows-v0.2.0).
 
 ## Get Started
 
 | | Windows | macOS |
 |---|---|---|
-| **Download** | [Portable x64 · v0.1.1](https://github.com/playertwo1/openusage/releases/download/windows-v0.1.1/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
+| **Download** | [Portable x64 · v0.2.0](https://github.com/playertwo1/openusage/releases/download/windows-v0.2.0/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
 | **Requirements** | Windows 10 or 11 | macOS 15 Sequoia or later; Apple Silicon or Intel |
 | **Install** | Download and run. No installer or separate .NET installation needed. | Open the DMG and drag OpenUsage to Applications. |
 | **Updates** | Download a newer Windows release manually. | Signed, notarized in-app Sparkle updates. |
@@ -44,9 +43,11 @@ brew install --cask openusage
 Choose **Add Account** on Windows or **Accounts → +** on macOS to sign in.
 Multiple accounts from the same provider are supported.
 
-On Windows, the executable and desktop shortcut use the OpenUsage icon. The **Close Window** (X)
-button hides the panel and keeps OpenUsage running in the tray; use **Exit OpenUsage** to quit.
-On Windows, click the floating widget to switch immediately between the ball and compact mini; hover to see account details.
+On Windows, the executable and desktop shortcut use the OpenUsage icon. Click the header mark to
+hide the panel while OpenUsage continues in the tray; use **Exit OpenUsage** to quit.
+To start OpenUsage when you sign in to Windows, enable **Settings → General → Launch At Sign-In**;
+it starts hidden in the tray.
+On Windows, click the floating widget to switch between the provider icon notch and compact mini; hover to see account details.
 
 ## OpenUsage for Windows
 
@@ -55,8 +56,8 @@ A compact native desktop app with three ways to stay informed:
 | View | When to use it |
 |---|---|
 | **Main panel** | Read account limits and reset times, switch between used and remaining, and expand weekly charts. |
-| **Mini widget** | Keep just provider names, two bars and percentages on the desktop. Purple is 5h; green is weekly. |
-| **Corner ball** | Keep the desktop clear. Hover for the account panel; click an account to open its chart in place. |
+| **Mini widget** | Keep providers and labelled 5h/Week bars on the desktop. Purple is 5h; green is weekly. |
+| **Provider icon notch** | Keep a compact pill of provider icons attached to the top, bottom or side of the screen. |
 
 ### A Clearer View of Your Accounts
 
@@ -65,6 +66,7 @@ A compact native desktop app with three ways to stay informed:
 - **Weekly pace at a click.** Compare observed usage with an even pace and see the projection for the current week.
 - **Used or remaining.** Change the value convention and filter to starred metrics.
 - **Your preferred display.** Choose light, AMOLED dark or system appearance, text size, reset format and account-label privacy. Optional soft transparency can be disabled for a solid background.
+- **Pill or expanded panel.** Choose provider icons or the detailed mini widget in Settings.
 
 <p align="center">
   <a href="docs/images/windows/overview.png"><img src="docs/images/windows/overview.png" alt="Current light-theme main panel with separate account headings and session and weekly limits" width="330"></a>
@@ -79,7 +81,7 @@ They are usage projections, not dollar or token estimates.
 Click the same account again to close its chart, or another account to switch.
 
 <p align="center">
-  <img src="docs/images/windows/mini-widget-ball.png" alt="Collapsed OpenUsage ball" width="40">
+  <img src="docs/images/windows/mini-widget-icons.png" alt="Collapsed OpenUsage provider icon notch" height="40">
   &nbsp;&nbsp;&nbsp;
   <img src="docs/images/windows/mini-widget.png" alt="Compact mini widget: provider labels with purple session and green weekly bars and percentages" width="360">
 </p>
@@ -88,8 +90,8 @@ Click the same account again to close its chart, or another account to switch.
   <a href="docs/images/windows/mini-widget-flyout.png"><img src="docs/images/windows/mini-widget-flyout.png" alt="Hover panel showing demo accounts, both usage windows and weekly pace verdicts" width="570"></a>
 </p>
 
-- **Click the ball** to expand the compact mini. Use **−** to collapse it again.
-- **Drag either view** near the top, bottom, sides or corners to snap it into place. Position and collapsed state are saved.
+- **Click the icon notch** to expand the mini panel. Use **−** to return to provider icons, or choose either style in Settings.
+- **Drag either view** near any edge or corner to snap it flush to the screen. The icon pill turns vertical at the sides; position and style are saved.
 - **Right-click** for always-on-top, lock position, orientation and other widget actions.
 - **Enable the widget** in **Settings → General** or from the tray menu.
 

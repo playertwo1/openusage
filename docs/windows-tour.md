@@ -12,18 +12,18 @@ The Windows edition lives in [`Windows/`](../Windows/) and is independent of the
   <img src="images/windows/overview-dark.png" alt="Windows Overview in the dark theme showing remaining values" width="320">
 </p>
 
-Overview keeps accounts in saved order, with a separate account heading and two metric lines: **5h** and **Week**. The panel grows or shrinks to fit visible content, capped at the monitor's work area. Overflow scrolls only when the content cannot fit on screen.
+Overview keeps accounts in saved order, with a separate account heading and two metric lines: **5h** and **Week**. It starts with Remaining selected, shows plan badges when the provider reports them, and opens the first account with a weekly window. The panel grows or shrinks to fit visible content, capped at the monitor's work area. Overflow scrolls only when the content cannot fit on screen.
 
 Each row shows:
 
 - **The provider and account name**, followed by both available windows with percentages, reset times and bars.
 - **Weekly pace warnings** when the projection exceeds the available weekly limit.
 
-Click a row (or press Enter or Space with it focused) to open its **weekly pace chart**. It plots your cumulative weekly use against the ideal line of 14.3% a day, adds a dashed projection to day 7, and marks where the limit would run out. The expanded section also shows "Up to X%/day left" and "Projected N%". Only one row is open at a time. Right-click a row for rename, remove and move actions.
+Click a row (or press Enter or Space with it focused) to open its **weekly pace chart**. It plots your cumulative weekly use against the ideal line of 14.3% a day, adds a dashed projection to day 7, and marks where the limit would run out. The chart includes 0%, 50% and 100% guides and weekday labels. Only one row is open at a time. Right-click a row for rename, remove and move actions.
 
 The pace is computed from the provider's own percentage and reset time over a 168-hour window: `expected = elapsed / 168h`, `projection = used / elapsed * 168h`, and the day the limit runs out is when use would reach 100% at the current rate. The chart uses weekly percentages OpenUsage has observed; it does not invent readings for periods when the app was closed. **There is no spend, token or price estimate anywhere**, because the providers do not report those and OpenUsage does not infer them.
 
-The switches above the list choose **Used** or **Remaining** (the displayed values and bars flip) and **All** or **Favorites**.
+The switches above the list choose **Remaining** or **Used** (the displayed values and bars flip) and **All** or **Favorites**.
 
 ### Accounts
 
@@ -43,7 +43,7 @@ Settings is a short list in three groups.
 
 - **Appearance:** theme (System, Light or Dark), text size (100%, 110% or 125%) and optional soft transparency. Transparency affects the whole panel, without desktop blur, and is disabled in high contrast.
 - **Usage Display:** show usage as used or remaining, reset times as a countdown or a date and time, favorites only, and hide account names. Hiding names applies to Overview, the tray, the tray tooltip and notifications. Accounts still shows them so you can manage them.
-- **General:** launch at sign-in, low usage alerts (a notification when a limit passes 90%), the global shortcut Ctrl+Alt+U, and the mini widget options below.
+- **General:** launch at sign-in, low usage alerts (a notification when a limit passes 90%), the global shortcut Ctrl+Alt+U, and the mini widget options below. **Mini Widget Style** switches between the expanded panel and the provider icon notch.
 
 ### Mini widget
 
@@ -52,15 +52,17 @@ Settings is a short list in three groups.
   &nbsp;
   <img src="images/windows/mini-widget-vertical.png" alt="Vertical mini widget" height="120">
   &nbsp;
+  <img src="images/windows/mini-widget-icons.png" alt="Compact provider icon pill docked to a screen edge" height="54">
+  &nbsp;
   <img src="images/windows/mini-widget-flyout.png" alt="Mini widget flyout with one row per account" width="300">
 </p>
 
 An optional small panel that floats on your desktop. Turn it on from **Settings > General**, the tray menu ("Show Mini Widget").
 
-- **The pill:** compact provider labels, numbered when a provider has multiple accounts, with a percentage and bar for each available 5h and Week window. Hover to read account details. The mini has no alert dots. A vertical layout is also available. Soft Transparency also applies to this widget.
-- **The ball:** click the small collapsed icon to show the mini. Click the mini again, use its minus button or the right-click menu to collapse again. This state is saved; new preferences start in ball mode. Enter or Space also activates the focused ball.
-- **Hover over the ball** to open the usage panel directly. Click an account to expand its weekly pace chart inside that panel; click again to collapse it. The ball stays collapsed. The panel remains open while the pointer is over the ball or the panel.
-- **Drag it anywhere** by its surface. It snaps while dragging within 32 logical pixels of any work-area edge, leaving a 6-pixel margin. Corners snap on both axes. It remembers its place **per monitor** and moves back into view if your resolution or monitors change.
+- **The panel:** provider marks and names, numbered when a provider has multiple accounts, with labelled 5h and Week rows, percentages and bars. Hover to read account details. The mini has no alert dots. A vertical layout is also available. Soft Transparency also applies to this widget.
+- **The icon notch:** a small pill with one icon per provider with visible usage. It touches the screen edge; it is horizontal at the top/bottom and vertical at the sides. Corners attach on both edges while the pill remains fully visible. Click it to expand the panel; Enter or Space also activates it.
+- **Hover over the icon notch** to open the usage panel directly. Click an account to expand its weekly pace chart inside that panel; click again to collapse it. The icon notch stays compact. The panel remains open while the pointer is over the notch or the panel.
+- **Drag it anywhere** by its surface. It snaps while dragging within 32 logical pixels of any work-area edge. The icon notch meets the edge; the expanded panel keeps its 6-pixel margin. Corners snap on both axes. It remembers its place **per monitor** and moves back into view if your resolution or monitors change.
 - **Hover** to open a flyout with every account's windows, reset times and verdict. It opens on whichever side has room and closes when the mouse leaves.
 - **Right-click** for Always on top, Lock position, Vertical layout, Open OpenUsage, Refresh now and Hide widget.
 - It has no border, stays out of the taskbar and Alt+Tab, and never takes keyboard focus.

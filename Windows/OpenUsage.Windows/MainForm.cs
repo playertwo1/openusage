@@ -32,8 +32,8 @@ public sealed class MainForm : Form
         AutoScaleMode = AutoScaleMode.Dpi;
         FormBorderStyle = FormBorderStyle.None;
         Padding = new Padding(3);
-        ClientSize = new Size(440, 700);
-        MinimumSize = new Size(400, 180);
+        ClientSize = new Size(600, 700);
+        MinimumSize = new Size(520, 180);
         StartPosition = FormStartPosition.CenterScreen;
         Icon = WindowsIntegration.CreateAppIcon();
         shell = new ShellView(store, WindowsIntegration.LaunchAtLogin);
@@ -81,9 +81,9 @@ public sealed class MainForm : Form
         BackColor = Color.FromArgb(brush.Color.R, brush.Color.G, brush.Color.B);
         if (Controls.Count > 0) Controls[0].BackColor = BackColor;
         var scale = store.State.Display.TextSize / 100d * DeviceDpi / 96d;
-        var minimum = (int)(400 * scale);
+        var minimum = (int)(520 * scale);
         MinimumSize = new Size(minimum, 180);
-        if (resize || Width < minimum) Width = (int)(440 * scale);
+        if (resize || Width < minimum) Width = (int)(600 * scale);
     }
 
     internal static int ContentHeight(double logicalHeight, double dpiScale, int available)

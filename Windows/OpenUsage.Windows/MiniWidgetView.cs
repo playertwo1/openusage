@@ -51,19 +51,35 @@ public sealed class MiniWidgetView : C.UserControl
 
     public MiniWidgetView() { MiniParts.Dark(this); }
 
-    public void Render(IReadOnlyList<MiniRow> rows, DisplayPreferences display)
+    public void Render(IReadOnlyList<MiniRow> rows, DisplayPreferences display, MiniDockEdges dockedEdges = MiniDockEdges.None)
     {
         if (display.MiniCollapsed)
         {
-            var ball = new C.Border { Width = 32, Height = 32, CornerRadius = new W.CornerRadius(16), BorderThickness = new W.Thickness(1),
-                Child = PresentationTheme.AppIcon(15), Focusable = true, Cursor = W.Input.Cursors.Hand };
-            ball.SetResourceReference(C.Border.BackgroundProperty, "Surface");
-            ball.SetResourceReference(C.Border.BorderBrushProperty, "Border");
-            ball.MouseLeftButtonDown += (_, _) => PressStarted?.Invoke();
-            ball.MouseEnter += (_, _) => HoverStarted?.Invoke();
-            ball.KeyDown += (_, e) => { if (e.Key is W.Input.Key.Enter or W.Input.Key.Space) { CollapseRequested?.Invoke(); e.Handled = true; } };
-            A.AutomationProperties.SetName(ball, "Expand Mini Widget");
-            Content = ball; return;
+            var iconPillVertical = VerticalFor(display, dockedEdges);
+            var providers = rows.Select(r => r.Account.Kind).Distinct().ToArray();
+            var icons = new C.StackPanel { Orientation = iconPillVertical ? C.Orientation.Vertical : C.Orientation.Horizontal };
+            if (providers.Length == 0) icons.Children.Add(PresentationTheme.AppIcon(20));
+            for (var i = 0; i < providers.Length; i++)
+            {
+                var icon = PresentationTheme.ProviderIcon(providers[i], 20);
+                icon.Margin = iconPillVertical ? new W.Thickness(0, 0, 0, i + 1 < providers.Length ? 10 : 0)
+                    : new W.Thickness(0, 0, i + 1 < providers.Length ? 10 : 0, 0);
+                icons.Children.Add(icon);
+            }
+            var iconPill = new C.Border
+            {
+                CornerRadius = DockRadius(dockedEdges), BorderThickness = DockBorder(dockedEdges),
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 0, 0)),
+                Padding = iconPillVertical ? new W.Thickness(8, 12, 8, 12) : new W.Thickness(12, 8, 12, 8),
+                Child = icons, Focusable = true, Cursor = W.Input.Cursors.Hand
+            };
+            iconPill.SetResourceReference(C.Border.BorderBrushProperty, "Border");
+            iconPill.MouseLeftButtonDown += (_, _) => PressStarted?.Invoke();
+            iconPill.MouseEnter += (_, _) => HoverStarted?.Invoke();
+            iconPill.KeyDown += (_, e) => { if (e.Key is W.Input.Key.Enter or W.Input.Key.Space) { CollapseRequested?.Invoke(); e.Handled = true; } };
+            A.AutomationProperties.SetName(iconPill, providers.Length == 0 ? "Expand Mini Widget"
+                : $"Expand Mini Widget. Providers: {string.Join(", ", providers.Select(kind => kind.Name()))}");
+            Content = iconPill; return;
         }
         var vertical = display.MiniVertical;
         var panel = new C.StackPanel { Orientation = vertical ? C.Orientation.Vertical : C.Orientation.Horizontal };
@@ -82,37 +98,66 @@ public sealed class MiniWidgetView : C.UserControl
         Content = pill; A.AutomationProperties.SetName(pill, "OpenUsage Mini Widget");
     }
 
+    internal static bool VerticalFor(DisplayPreferences display, MiniDockEdges dockedEdges)
+    {
+        if ((dockedEdges & (MiniDockEdges.Top | MiniDockEdges.Bottom)) != 0) return false;
+        if ((dockedEdges & (MiniDockEdges.Left | MiniDockEdges.Right)) != 0) return true;
+        return display.MiniVertical;
+    }
+
+    private static W.CornerRadius DockRadius(MiniDockEdges edges)
+    {
+        double topLeft = 14, topRight = 14, bottomRight = 14, bottomLeft = 14;
+        if ((edges & MiniDockEdges.Top) != 0) topLeft = topRight = 0;
+        if ((edges & MiniDockEdges.Bottom) != 0) bottomLeft = bottomRight = 0;
+        if ((edges & MiniDockEdges.Left) != 0) topLeft = bottomLeft = 0;
+        if ((edges & MiniDockEdges.Right) != 0) topRight = bottomRight = 0;
+        return new W.CornerRadius(topLeft, topRight, bottomRight, bottomLeft);
+    }
+
+    private static W.Thickness DockBorder(MiniDockEdges edges) => new(
+        (edges & MiniDockEdges.Left) == 0 ? 1 : 0,
+        (edges & MiniDockEdges.Top) == 0 ? 1 : 0,
+        (edges & MiniDockEdges.Right) == 0 ? 1 : 0,
+        (edges & MiniDockEdges.Bottom) == 0 ? 1 : 0);
+
     private static W.UIElement Cell(MiniRow row, DisplayPreferences display, bool vertical)
     {
-        var cell = new C.Grid { Width = 112, Margin = vertical ? new W.Thickness(0, 0, 0, 5) : new W.Thickness(0, 0, 7, 0) };
+        var cell = new C.Grid { Width = 134, Margin = vertical ? new W.Thickness(0, 0, 0, 5) : new W.Thickness(0, 0, 7, 0) };
         var stack = new C.StackPanel();
         var ordinal = new string(row.Short.Where(char.IsDigit).ToArray());
-        var label = MiniParts.Text(row.Account.Kind.Name() + (ordinal.Length == 0 ? "" : " " + ordinal), 10, "Foreground", true);
-        label.Margin = new W.Thickness(0, 0, 8, 0); stack.Children.Add(label);
-        stack.Children.Add(Window(row.Session, display, "S5h")); stack.Children.Add(Window(row.Weekly, display, "Swk"));
+        var heading = new C.StackPanel { Orientation = C.Orientation.Horizontal };
+        var icon = PresentationTheme.ProviderIcon(row.Account.Kind, 14); icon.Margin = new W.Thickness(0, 0, 5, 0); heading.Children.Add(icon);
+        heading.Children.Add(MiniParts.Text(row.Account.Kind.Name() + (ordinal.Length == 0 ? "" : " " + ordinal), 10, "Foreground", true));
+        stack.Children.Add(heading);
+        stack.Children.Add(Window(row.Session, display, "5h", "S5h"));
+        stack.Children.Add(Window(row.Weekly, display, "Week", "Swk"));
         cell.Children.Add(stack);
         A.AutomationProperties.SetName(cell, $"{row.Account.Kind.Name()}: " + string.Join(", ", new[] { row.Session, row.Weekly }.OfType<Metric>().Select(m => $"{m.Label} {MetricPresentation.Value(m, display)}")));
         return cell;
     }
 
-    private static W.UIElement Window(Metric? metric, DisplayPreferences display, string tone)
+    private static W.UIElement Window(Metric? metric, DisplayPreferences display, string caption, string tone)
     {
-        var row = new C.Grid { Margin = new W.Thickness(0, 2, 0, 0) };
+        var row = new C.Grid { Margin = new W.Thickness(0, 3, 0, 0) };
+        row.ColumnDefinitions.Add(new() { Width = new W.GridLength(27) });
         row.ColumnDefinitions.Add(new() { Width = new W.GridLength(1, W.GridUnitType.Star) });
         row.ColumnDefinitions.Add(new() { Width = new W.GridLength(34) });
-        var bar = Bar(metric, display, tone); row.Children.Add(bar);
-        var value = MiniParts.Text(metric is null ? "—" : MetricPresentation.Value(metric, display).Split(' ')[0], 10, "Foreground");
-        value.HorizontalAlignment = W.HorizontalAlignment.Right; C.Grid.SetColumn(value, 1); row.Children.Add(value); return row;
+        var fill = metric is null ? null : MetricPresentation.Fill(metric, display);
+        row.Children.Add(MiniParts.Text(caption, 9, "Muted"));
+        var bar = Bar(fill, tone); C.Grid.SetColumn(bar, 1); row.Children.Add(bar);
+        var value = MiniParts.Text(fill is double percent ? $"{percent:0.#}%" : "—", 10, "Foreground");
+        value.HorizontalAlignment = W.HorizontalAlignment.Right; C.Grid.SetColumn(value, 2); row.Children.Add(value); return row;
     }
 
-    private static W.UIElement Bar(Metric? metric, DisplayPreferences display, string tone)
+    private static W.UIElement Bar(double? fill, string tone)
     {
         var bar = new C.Grid { Height = 4, Margin = new W.Thickness(0, 3, 0, 0) };
-        var track = new C.Border { CornerRadius = new W.CornerRadius(2), Opacity = metric is null ? .3 : 1 }; track.SetResourceReference(C.Border.BackgroundProperty, "Track"); bar.Children.Add(track);
-        if (metric is not null && MetricPresentation.Fill(metric, display) is double fill)
+        var track = new C.Border { CornerRadius = new W.CornerRadius(2), Opacity = fill is null ? .65 : 1 }; track.SetResourceReference(C.Border.BackgroundProperty, "Track"); bar.Children.Add(track);
+        if (fill is double percent)
         {
             var inner = new C.Border { CornerRadius = new W.CornerRadius(2), HorizontalAlignment = W.HorizontalAlignment.Left }; inner.SetResourceReference(C.Border.BackgroundProperty, tone); bar.Children.Add(inner);
-            bar.SizeChanged += (_, e) => inner.Width = e.NewSize.Width * Math.Clamp(fill, 0, 100) / 100;
+            bar.SizeChanged += (_, e) => inner.Width = e.NewSize.Width * Math.Clamp(percent, 0, 100) / 100;
         }
         return bar;
     }
