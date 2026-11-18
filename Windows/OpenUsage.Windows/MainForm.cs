@@ -276,7 +276,9 @@ public sealed class MainForm : Form
             var text = $"{metric.Label}: {100 - used:0}% left";
             if (weekly && WeeklyPace.From(metric, store.State.History.GetValueOrDefault(account.Id) ?? [], now) is { } pace)
                 text += pace.RunsOut ? $" · At this pace it runs out {pace.Verdict["Runs out ".Length..]}, before the week ends" : " · On pace to last the week";
-            tray.ShowBalloonTip(8000, $"{account.Kind.Name()} · {MetricPresentation.AccountName(account, store.State.Accounts, store.State.Display.HideAccountNames)}", text, level <= 20 ? ToolTipIcon.Warning : ToolTipIcon.Info);
+            var title = $"{account.Kind.Name()} · {MetricPresentation.AccountName(account, store.State.Accounts, store.State.Display.HideAccountNames)}";
+            if (mini is not null && store.State.Display.MiniWidget) mini.ShowAlert(account.Kind, title, text, level <= 20);
+            else tray.ShowBalloonTip(8000, title, text, level <= 20 ? ToolTipIcon.Warning : ToolTipIcon.Info);
         }
     }
     // Smallest of 50/40/30/20/10 that the remaining percentage has fallen to; 100 means none yet.

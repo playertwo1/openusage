@@ -84,7 +84,7 @@ Click the header's OpenUsage mark to hide only the panel. The executable, taskba
 desktop shortcut use the embedded OpenUsage icon. Use **Exit OpenUsage** to end the process.
 Right-click the icon and choose **Exit** to quit. If the shortcut is in use by another app, use the
 tray icon. **Settings → General → Launch At Sign-In** starts OpenUsage hidden in the tray when you
-sign in to Windows; Settings also controls low-usage alerts: one each time the 5h or weekly window falls to 50%, 40%, 30%, 20% and 10% remaining, with the weekly alert saying whether you are on pace to last the week.
+sign in to Windows; Settings also controls low-usage alerts: one each time the 5h or weekly window falls to 50%, 40%, 30%, 20% and 10% remaining, with the weekly alert saying whether you are on pace to last the week. The alert appears as a bubble beside the mini widget (a tray notification if the widget is off) and disappears after eight seconds; click it to open the panel.
 
 Metadata, preferences and credentials are encrypted together with Windows DPAPI for the current
 Windows user, under `%LOCALAPPDATA%\OpenUsage.Windows\accounts.dat`. Removing an account deletes its

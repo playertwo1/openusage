@@ -15,7 +15,7 @@ accounts (Claude, Codex, Cursor, Copilot, Antigravity, Grok, Ollama, OpenCode, O
 
 - **Main panel, mini widget and provider icon notch** for reading limits and reset times at a glance.
 - **Weekly pace:** compares usage with an even pace and projects whether the week will last.
-- **Low usage alerts:** a tray notification each time the 5h or weekly window falls to 50%, 40%, 30%,
+- **Low usage alerts:** a bubble that grows out of the mini widget (a tray notification when the widget is off) each time the 5h or weekly window falls to 50%, 40%, 30%,
   20% and 10% remaining. The weekly alert says whether you are on pace to last the week. Toggle it in
   Settings → General → Low Usage Alerts.
 - **Multiple accounts** per provider, in your saved order. Sign-in is always started by you from **Add Account**.

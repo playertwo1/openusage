@@ -9,6 +9,7 @@ public sealed class MiniWidgetForm : Form
     private readonly AccountStore store;
     private readonly MiniWidgetView view = new();
     private readonly FlyoutForm flyout;
+    private readonly AlertForm alert = new();
     private readonly System.Windows.Forms.Timer hover = new() { Interval = 300 };
     private readonly System.Windows.Forms.Timer leave = new() { Interval = 200 };
     private IReadOnlyList<MiniRow> rows = [];
@@ -27,6 +28,7 @@ public sealed class MiniWidgetForm : Form
         BackColor = Color.FromArgb(0, 0, 0);
         Controls.Add(new ElementHost { Dock = DockStyle.Fill, Child = view, BackColor = BackColor });
         flyout = new FlyoutForm(store);
+        alert.Clicked += () => { alert.Hide(); OpenRequested?.Invoke(); };
         flyout.OpenRequested += () => { flyout.Hide(); OpenRequested?.Invoke(); };
         flyout.ContentChanged += () => { if (flyout.Visible) PositionFlyout(); };
         view.PressStarted += BeginDrag;
@@ -216,14 +218,26 @@ public sealed class MiniWidgetForm : Form
     // Opens beside the widget on whichever side has room, always inside the work area.
     public void ShowFlyout()
     {
+        alert.Hide();
         flyout.Render(rows, updated, status);
         PositionFlyout();
         flyout.Show();
     }
 
-    private void PositionFlyout()
+    // A low-usage alert that grows out of the widget, in the widget's own look. Gives way to the hover flyout.
+    public void ShowAlert(ProviderKind kind, string title, string text, bool danger)
     {
-        var area = Screen.FromRectangle(Bounds).WorkingArea; var size = flyout.Size;
+        if (flyout.Visible) flyout.Hide();
+        alert.Present(kind, title, text, danger);
+        PositionBeside(alert);
+        alert.Show();
+    }
+
+    private void PositionFlyout() => PositionBeside(flyout);
+
+    private void PositionBeside(Form popup)
+    {
+        var area = Screen.FromRectangle(Bounds).WorkingArea; var size = popup.Size;
         var display = store.State.Display;
         var edges = display.MiniCollapsed ? SavedDockEdges(display, area, Size, DeviceDpi / 96d) : MiniDockEdges.None;
         var vertical = MiniWidgetView.VerticalFor(display, edges);
@@ -236,8 +250,8 @@ public sealed class MiniWidgetForm : Form
         {
             y = Bottom + 8 + size.Height <= area.Bottom ? Bottom + 8 : Top - 8 - size.Height; x = Left;
         }
-        flyout.Location = new Point(Math.Clamp(x, area.Left, Math.Max(area.Left, area.Right - size.Width)), Math.Clamp(y, area.Top, Math.Max(area.Top, area.Bottom - size.Height)));
-        flyout.TopMost = TopMost;
+        popup.Location = new Point(Math.Clamp(x, area.Left, Math.Max(area.Left, area.Right - size.Width)), Math.Clamp(y, area.Top, Math.Max(area.Top, area.Bottom - size.Height)));
+        popup.TopMost = popup is AlertForm || TopMost;
     }
 
     private System.Windows.Controls.ContextMenu BuildMenu()
@@ -266,7 +280,7 @@ public sealed class MiniWidgetForm : Form
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaysChanged; hover.Dispose(); leave.Dispose(); flyout.Dispose(); }
+        if (disposing) { Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaysChanged; hover.Dispose(); leave.Dispose(); flyout.Dispose(); alert.Dispose(); }
         base.Dispose(disposing);
     }
 
@@ -300,5 +314,45 @@ public sealed class MiniWidgetForm : Form
             var scale = DeviceDpi / 96d; ClientSize = new Size((int)Math.Ceiling(content.DesiredSize.Width * scale), (int)Math.Ceiling(content.DesiredSize.Height * scale));
             using var path = RoundedPath(new Rectangle(0, 0, Width, Height), (int)(8 * scale)); Region = new Region(path);
         }
+    }
+
+    // The alert bubble: same black pill, border and type as the widget, with a Warning or Danger accent. Never takes focus.
+    private sealed class AlertForm : Form
+    {
+        private readonly ElementHost host = new() { Dock = DockStyle.Fill };
+        private readonly System.Windows.Forms.Timer timer = new() { Interval = 8000 };
+        public event Action? Clicked;
+        public AlertForm()
+        {
+            FormBorderStyle = FormBorderStyle.None; ShowInTaskbar = false; StartPosition = FormStartPosition.Manual; AutoScaleMode = AutoScaleMode.Dpi;
+            BackColor = Color.Black; host.BackColor = BackColor; Controls.Add(host);
+            timer.Tick += (_, _) => Hide();
+            VisibleChanged += (_, _) => { timer.Stop(); if (Visible) timer.Start(); };
+            _ = Handle; // DeviceDpi is only correct once the window exists, and Present sizes from it
+        }
+        protected override bool ShowWithoutActivation => true;
+        protected override CreateParams CreateParams { get { var p = base.CreateParams; p.ExStyle |= 0x08000000 | 0x00000080; return p; } }
+        public void Present(ProviderKind kind, string title, string text, bool danger)
+        {
+            var view = new System.Windows.Controls.UserControl(); MiniParts.Dark(view);
+            var accent = new System.Windows.Controls.Border { Width = 3, CornerRadius = new System.Windows.CornerRadius(2), Margin = new System.Windows.Thickness(0, 0, 10, 0) };
+            accent.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, danger ? "Danger" : "Warning");
+            var heading = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
+            var icon = PresentationTheme.ProviderIcon(kind, 14); icon.Margin = new System.Windows.Thickness(0, 0, 6, 0); heading.Children.Add(icon);
+            heading.Children.Add(MiniParts.Text(title, 11, "Foreground", true));
+            var body = MiniParts.Text(text, 10, "Muted"); body.TextTrimming = System.Windows.TextTrimming.None; body.TextWrapping = System.Windows.TextWrapping.Wrap; body.MaxWidth = 240; body.VerticalAlignment = System.Windows.VerticalAlignment.Top; body.Margin = new System.Windows.Thickness(0, 4, 0, 0);
+            var stack = new System.Windows.Controls.StackPanel(); stack.Children.Add(heading); stack.Children.Add(body);
+            var row = new System.Windows.Controls.Grid(); row.ColumnDefinitions.Add(new() { Width = System.Windows.GridLength.Auto }); row.ColumnDefinitions.Add(new() { Width = System.Windows.GridLength.Auto }); System.Windows.Controls.Grid.SetColumn(stack, 1); row.Children.Add(accent); row.Children.Add(stack);
+            var pill = new System.Windows.Controls.Border { CornerRadius = new System.Windows.CornerRadius(8), BorderThickness = new System.Windows.Thickness(1), Background = System.Windows.Media.Brushes.Black, Padding = new System.Windows.Thickness(10), Child = row, Cursor = System.Windows.Input.Cursors.Hand };
+            pill.SetResourceReference(System.Windows.Controls.Border.BorderBrushProperty, "Border");
+            pill.MouseLeftButtonDown += (_, _) => Clicked?.Invoke();
+            System.Windows.Automation.AutomationProperties.SetName(pill, $"{title}. {text}");
+            view.Content = pill; host.Child = view;
+            view.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+            var scale = DeviceDpi / 96d; ClientSize = new Size((int)Math.Ceiling(view.DesiredSize.Width * scale), (int)Math.Ceiling(view.DesiredSize.Height * scale));
+            using var path = RoundedPath(new Rectangle(0, 0, Width, Height), (int)(8 * scale)); Region = new Region(path);
+            timer.Stop(); if (Visible) timer.Start();
+        }
+        protected override void Dispose(bool disposing) { if (disposing) timer.Dispose(); base.Dispose(disposing); }
     }
 }
