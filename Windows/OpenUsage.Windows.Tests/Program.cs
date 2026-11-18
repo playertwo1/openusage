@@ -22,6 +22,7 @@ try
     Check(store.State.Accounts[0].Id == b.Id, "Provider Reorder");
     Check(store.IsPinned(a, new Metric("Session", 10)), "Existing Codex Pin Default");
     Check(!store.IsPinned(a, new Metric("Spark", 10)), "Other Metrics Must Not Be Pinned By Default");
+    Check(new[] { 60d, 50, 45, 40, 31, 30, 20, 10, 0 }.Select(MainForm.AlertLevel).SequenceEqual(new[] { 100, 50, 50, 40, 40, 30, 20, 10, 10 }), "Low Usage Alerts Must Fire At 50, 40, 30, 20 And 10 Percent Remaining");
     store.Edit(s => s.Hidden.Add(AccountStore.MetricKey(a.Id, "Weekly")));
     store.Remove(a.Id);
     Check(!store.State.Hidden.Any(), "Removing An Account Must Clear Its Layout Settings");
