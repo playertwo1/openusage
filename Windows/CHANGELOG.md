@@ -1,5 +1,9 @@
 # OpenUsage for Windows
 
+## 0.2.1
+
+- **Low usage alerts:** notify each time the 5h or weekly window falls to 50%, 40%, 30%, 20% and 10% remaining. The weekly alert also says whether you are on pace to last the week or will run out before it ends.
+
 ## 0.2.0
 
 - **Provider icon notch:** replace the collapsed ball with a compact pill showing provider icons. It docks flush at the top, bottom, sides and corners; side placement turns the pill vertical while keeping it fully visible.

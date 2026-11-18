@@ -21,14 +21,14 @@ Session limits, weekly usage and reset times — in your tray, on your desktop, 
 This fork adds a native Windows edition to [Robin Ebers' OpenUsage](https://github.com/robinebers/openusage).
 Windows and macOS have separate builds and releases.
 
-> **Windows 0.2.0:** the current Windows interface includes the provider icon notch, which docks to
-> screen edges and corners. See the [Windows release](https://github.com/playertwo1/openusage/releases/tag/windows-v0.2.0).
+> **Windows 0.2.1:** the current Windows interface includes the provider icon notch, which docks to
+> screen edges and corners. See the [Windows release](https://github.com/playertwo1/openusage/releases/tag/windows-v0.2.1).
 
 ## Get Started
 
 | | Windows | macOS |
 |---|---|---|
-| **Download** | [Portable x64 · v0.2.0](https://github.com/playertwo1/openusage/releases/download/windows-v0.2.0/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
+| **Download** | [Portable x64 · v0.2.1](https://github.com/playertwo1/openusage/releases/download/windows-v0.2.1/OpenUsage-windows-x64.exe) | [Universal DMG](https://github.com/robinebers/openusage/releases/latest) |
 | **Requirements** | Windows 10 or 11 | macOS 15 Sequoia or later; Apple Silicon or Intel |
 | **Install** | Download and run. No installer or separate .NET installation needed. | Open the DMG and drag OpenUsage to Applications. |
 | **Updates** | Download a newer Windows release manually. | Signed, notarized in-app Sparkle updates. |
