@@ -43,7 +43,7 @@ public sealed partial class ShellView
                 Navigate("Settings");
             }
         }));
-        Row(general, "Low Usage Alerts", "Notify when less than 10% remains", Toggle("Low Usage Alerts", store.State.Notifications, value =>
+        Row(general, "Low Usage Alerts", "Notify at 50%, 40%, 30%, 20% and 10% left in the 5h and weekly windows", Toggle("Low Usage Alerts", store.State.Notifications, value =>
         {
             try { store.Edit(state => state.Notifications = value); }
             catch (Exception error)

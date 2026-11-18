@@ -7,7 +7,7 @@ public sealed class MainForm : Form
     private readonly UsageService usage;
     private readonly ProviderLogin login;
     private readonly Dictionary<Guid, AccountStatus> statuses = [];
-    private readonly Dictionary<string, bool> notified = [];
+    private readonly Dictionary<string, int> notified = [];
     private readonly Dictionary<Guid, CancellationTokenSource> activeRequests = [];
     private readonly ShellView shell;
     private DashboardView dashboard => shell.Dashboard;
@@ -264,15 +264,23 @@ public sealed class MainForm : Form
     }
     private void Notify(Account account, UsageSnapshot snapshot)
     {
-        foreach (var metric in snapshot.Metrics)
+        var now = DateTimeOffset.UtcNow;
+        foreach (var (metric, weekly) in new[] { (MetricPresentation.Window(snapshot.Metrics, false), false), (MetricPresentation.Window(snapshot.Metrics, true), true) })
         {
+            if (metric?.Percent is not double used) continue;
             var key = AccountStore.MetricKey(account.Id, metric.Label);
-            var low = metric.Percent >= 90;
-            if (store.State.Notifications && !store.IsHidden(account, metric) && low && !notified.GetValueOrDefault(key))
-                tray.ShowBalloonTip(8000, $"{account.Kind.Name()} · {MetricPresentation.AccountName(account, store.State.Accounts, store.State.Display.HideAccountNames)}", $"{metric.Label}: {MetricPresentation.Value(metric, store.State.Display)}", ToolTipIcon.Warning);
-            notified[key] = low;
+            var level = AlertLevel(100 - used);
+            var previous = notified.GetValueOrDefault(key, 100);
+            notified[key] = level;
+            if (!store.State.Notifications || store.IsHidden(account, metric) || level >= previous) continue;
+            var text = $"{metric.Label}: {100 - used:0}% left";
+            if (weekly && WeeklyPace.From(metric, store.State.History.GetValueOrDefault(account.Id) ?? [], now) is { } pace)
+                text += pace.RunsOut ? $" · At this pace it runs out {pace.Verdict["Runs out ".Length..]}, before the week ends" : " · On pace to last the week";
+            tray.ShowBalloonTip(8000, $"{account.Kind.Name()} · {MetricPresentation.AccountName(account, store.State.Accounts, store.State.Display.HideAccountNames)}", text, level <= 20 ? ToolTipIcon.Warning : ToolTipIcon.Info);
         }
     }
+    // Smallest of 50/40/30/20/10 that the remaining percentage has fallen to; 100 means none yet.
+    internal static int AlertLevel(double remaining) => new[] { 10, 20, 30, 40, 50 }.Cast<int?>().FirstOrDefault(t => remaining <= t) ?? 100;
     private void Render()
     {
         if (IsDisposed) return;
